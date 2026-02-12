@@ -1,0 +1,37 @@
+// ---------------------------------------------------------------------
+// RISC-V Program to Force-Feed Logic Retention
+// Targets specific patterns in your DMEM_Data_Block.hex
+// ---------------------------------------------------------------------
+
+00000013   // 0:  NOP
+
+// --- Step 1: Initialize Base Address ---
+// We need a pointer to the start of Data Memory (0x00000000)
+// x1 = 0
+00000093   // 1:  ADDI x1, x0, 0
+
+// --- Step 2: Read "DEADBEEF" (Force Memory Read Logic) ---
+// DEADBEEF is at index 29 (0x1D) in your list.
+// 29 * 4 bytes = 116 (0x74) byte offset.
+// LW x2, 116(x1)  -> Loads 0xDEADBEEF into x2
+0740A103   // 2:  LW   x2, 116(x1)
+
+// --- Step 3: Read "12345678" (Force Memory Read Logic) ---
+// 12345678 is at index 49 (0x31).
+// 49 * 4 bytes = 196 (0xC4) byte offset.
+// LW x3, 196(x1)  -> Loads 0x12345678 into x3
+0C40A183   // 3:  LW   x3, 196(x1)
+
+// --- Step 4: ALU Operations on Data (Force ALU Logic) ---
+// x4 = x2 + x3 (DEADBEEF + 12345678)
+// This forces the tool to keep the ALU, RegFile, AND the Memory inputs.
+00310233   // 4:  ADD  x4, x2, x3
+
+// --- Step 5: Write Result Back to Memory (Force Memory Write Logic) ---
+// We will write the result to the last slot (Index 63, 0x3F).
+// 63 * 4 bytes = 252 (0xFC) byte offset.
+// SW x4, 252(x1)  -> Overwrites 0xFFFF0000 with the Sum
+0E40A223   // 5:  SW   x4, 252(x1)
+
+// --- Step 6: Loop Forever ---
+0000006F   // 6:  JAL  x0, 0
