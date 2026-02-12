@@ -1,0 +1,20 @@
+# Vivado temporary files and logs
+*.log
+*.jou
+*.str
+.Xil/
+*.pb
+*.jou
+
+# Implementation/Synthesis results
+*.runs/
+*.gen/
+*.ip_user_files/
+*.hw/
+*.sim/
+*.cache/
+
+# Binary files
+*.bit
+*.bin
+*.mcs
