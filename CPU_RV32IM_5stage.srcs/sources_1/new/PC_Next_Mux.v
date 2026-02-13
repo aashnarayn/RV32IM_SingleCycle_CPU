@@ -2,7 +2,8 @@
 * Module: PC_Next_Mux.v
 * Description: Selects next Program Counter value based on jump/branch conditions 
 * and control signals. Supports JAL, JALR, Branch and PC+4 updates.
-* Updated 5-stage pipeline. //TODO: Check the execution stage of this module and review
+* Updated 5-stage pipeline. 
+* Stage: IF
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

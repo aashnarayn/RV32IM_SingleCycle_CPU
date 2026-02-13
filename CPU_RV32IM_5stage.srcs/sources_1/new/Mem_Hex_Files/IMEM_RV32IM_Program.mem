@@ -1,37 +1,22 @@
-// ---------------------------------------------------------------------
-// RISC-V Program to Force-Feed Logic Retention
-// Targets specific patterns in your DMEM_Data_Block.hex
-// ---------------------------------------------------------------------
+// IMEM Content for RV32IM Pipeline Validation
+// Format: 32-bit Hex Strings
+// Covers: ALU, Forwarding, Load-Use, MAC/MACI, Div Stall, Branch Flush
 
-00000013   // 0:  NOP
-
-// --- Step 1: Initialize Base Address ---
-// We need a pointer to the start of Data Memory (0x00000000)
-// x1 = 0
-00000093   // 1:  ADDI x1, x0, 0
-
-// --- Step 2: Read "DEADBEEF" (Force Memory Read Logic) ---
-// DEADBEEF is at index 29 (0x1D) in your list.
-// 29 * 4 bytes = 116 (0x74) byte offset.
-// LW x2, 116(x1)  -> Loads 0xDEADBEEF into x2
-0740A103   // 2:  LW   x2, 116(x1)
-
-// --- Step 3: Read "12345678" (Force Memory Read Logic) ---
-// 12345678 is at index 49 (0x31).
-// 49 * 4 bytes = 196 (0xC4) byte offset.
-// LW x3, 196(x1)  -> Loads 0x12345678 into x3
-0C40A183   // 3:  LW   x3, 196(x1)
-
-// --- Step 4: ALU Operations on Data (Force ALU Logic) ---
-// x4 = x2 + x3 (DEADBEEF + 12345678)
-// This forces the tool to keep the ALU, RegFile, AND the Memory inputs.
-00310233   // 4:  ADD  x4, x2, x3
-
-// --- Step 5: Write Result Back to Memory (Force Memory Write Logic) ---
-// We will write the result to the last slot (Index 63, 0x3F).
-// 63 * 4 bytes = 252 (0xFC) byte offset.
-// SW x4, 252(x1)  -> Overwrites 0xFFFF0000 with the Sum
-0E40A223   // 5:  SW   x4, 252(x1)
-
-// --- Step 6: Loop Forever ---
-0000006F   // 6:  JAL  x0, 0
+00400093 // 0x00: ADDI x1, x0, 4      (Ptr to 0x11111111)
+0000A103 // 0x04: LW   x2, 0(x1)      (Load 0x11111111 into x2)
+00200193 // 0x08: ADDI x3, x0, 2      (Load 2 into x3)
+00210233 // 0x0C: ADD  x4, x2, x2     (RAW Hazard! x4 = 0x22222222)
+00A00293 // 0x10: ADDI x5, x0, 10     (Accumulator Init = 10)
+00300313 // 0x14: ADDI x6, x0, 3      (MAC Operand A = 3)
+00400393 // 0x18: ADDI x7, x0, 4      (MAC Operand B = 4)
+0073028B // 0x1C: MAC  x5, x6, x7     (x5 += 3*4 -> 22. Custom Opcode 0x0B)
+0053128B // 0x20: MACI x5, x6, 5      (x5 += 3*5 -> 37. Accumulator Fwd Check!)
+02324433 // 0x24: DIV  x8, x4, x3     (x8 = 222.../2. Stall Check!)
+07400513 // 0x28: ADDI x10, x0, 116   (Ptr to DEADBEEF)
+00052583 // 0x2C: LW   x11, 0(x10)    (Load DEADBEEF)
+00154603 // 0x30: LBU  x12, 1(x10)    (Load Byte 0xBE)
+00C08223 // 0x34: SB   x12, 4(x1)     (Store Byte 0xBE @ Addr 8)
+00318463 // 0x38: BEQ  x3, x3, 8      (Branch Taken -> Skip to 0x44)
+00000013 // 0x3C: NOP                 (Flushed)
+00000013 // 0x40: NOP                 (Flushed)
+0000006F // 0x44: JAL  x0, 0          (Infinite Halt Loop)

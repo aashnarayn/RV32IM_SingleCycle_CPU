@@ -1,0 +1,45 @@
+// This is the encoded Assembly code 
+// currently present in IMEM_RV32IM_Program.mem
+// Code provided for clarity
+
+// --- BLOCK 1: INITIALIZATION & BASIC ALU ---
+0x00: ADDI x1, x0, 4        // x1 = 4 (Base Offset for 11111111)
+0x04: LW   x2, 0(x1)        // x2 = MEM[4] = 0x11111111 (Tests Load)
+0x08: ADDI x3, x0, 2        // x3 = 2
+0x0C: ADD  x4, x2, x2       // x4 = 0x22222222 (Tests Forwarding: Load->EX)
+
+// --- BLOCK 2: CUSTOM MAC EXTENSIONS ---
+// Setup small numbers for verifiable math
+0x10: ADDI x5, x0, 10       // x5 = 10 (Initial Accumulator)
+0x14: ADDI x6, x0, 3        // x6 = 3
+0x18: ADDI x7, x0, 4        // x7 = 4
+
+// TEST 1: Standard MAC (Reg-Reg)
+// Accum(x5) += x6 * x7  => 10 + (3*4) = 22 (0x16)
+// Opcode: 0x0B, Funct3: 000, Rd: 5, Rs1: 6, Rs2: 7
+0x1C: MAC  x5, x6, x7       // Hex: 0073028B
+
+// TEST 2: Back-to-Back MACI (Immediate) - CRITICAL FORWARDING TEST
+// The new accumulator value (22) must be forwarded from EX/MEM to ID/EX
+// Accum(x5) += x6 * 5   => 22 + (3*5) = 37 (0x25)
+// Opcode: 0x0B, Funct3: 001, Rd: 5, Rs1: 6, Imm: 5
+0x20: MACI x5, x6, 5        // Hex: 0053128B
+
+// --- BLOCK 3: MULTI-CYCLE DIVIDER ---
+// TEST 3: Divider Stall
+// x8 = x4 / x3 => 0x22222222 / 2 = 0x11111111
+// This forces the Hazard Unit to stall the pipeline for ~34 cycles
+0x24: DIV  x8, x4, x3       // Hex: 02324433
+
+// --- BLOCK 4: MEMORY & BYTE ACCESS ---
+// x10 = Base Address for DEADBEEF (Line 29 = 116 bytes = 0x74)
+0x28: ADDI x10, x0, 116     // x10 = 0x74
+0x2C: LW   x11, 0(x10)      // x11 = 0xDEADBEEF
+0x30: LBU  x12, 1(x10)      // x12 = 0xBE (Unsigned Byte load)
+0x34: SB   x12, 4(x1)       // Store 0xBE to address 8 (Overwrite 22222222)
+
+// --- BLOCK 5: CONTROL HAZARDS (Branch/Jump) ---
+0x38: BEQ  x3, x3, 8        // Branch Taken (Skip next instruction) -> Flush ID
+0x3C: ADDI x0, x0, 0        // DEAD CODE (Should be flushed)
+0x40: ADDI x0, x0, 0        // DEAD CODE (Should be flushed)
+0x44: JAL  x1, 0            // Infinite Loop (End of Test)

@@ -3,6 +3,7 @@
 * Description: Generates 32-bit sign-extended immediate based on 
 * RV32IM instruction format. Left shifts immediates by 1 for 
 * Branch and Jump immediates.
+* Stage: ID
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */
@@ -15,7 +16,7 @@ module Imm_Gen #(
     parameter WIDTH       = 32,
     parameter INSTR_WIDTH = 32
     )(
-    input  wire [INSTR_WIDTH-1:0] ID_Instr_RV32IM,  // Origin: IF/ID Pipeline Register (Instr Output)
+    input  wire [INSTR_WIDTH-1:0] ID_Instr_RV32IM,  // Origin: Instruction Splitter (Instr Output)
     input  wire [2:0]             ID_ImmediateSrc,  // Origin: Control Unit (ID Stage)
     output reg  [WIDTH-1:0]       ID_Immediate      // Destination: ID/EX Pipeline Register
     );

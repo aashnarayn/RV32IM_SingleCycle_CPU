@@ -2,7 +2,7 @@
 * Module: Jump_Target_Gen.v
 * Description: Computes the Jump target address for JALR by masking LSB
 * and passing JAL target address as is.
-* Updated for 5-stage pipeline.
+* Stage: EX
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

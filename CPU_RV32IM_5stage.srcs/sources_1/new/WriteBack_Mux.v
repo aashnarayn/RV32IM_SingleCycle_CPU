@@ -2,7 +2,7 @@
 * Module: WriteBack_Mux.v
 * Description: Selects write-back data for the register file based on MemToReg,
 * with full support for RV32IM ISA.
-* Updated for WB stage signal naming in 5-stage pipeline.
+* Stage: WB
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

@@ -3,7 +3,7 @@
 * Description: Performs combinational operations as required
 * by the RV32I instruction set and sends result.
 * Leaves RV32M instructions for ALU_RV32M.v
-* Updated for 5-stage pipeline.
+* Stage: EX
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

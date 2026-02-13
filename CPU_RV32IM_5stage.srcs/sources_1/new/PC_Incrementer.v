@@ -2,6 +2,7 @@
 * Module: PC_Adder.v
 * Description: Computes the address of the next sequential instruction 
 * by adding 4 to the current Program Counter (PC).
+* Stage - IF
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

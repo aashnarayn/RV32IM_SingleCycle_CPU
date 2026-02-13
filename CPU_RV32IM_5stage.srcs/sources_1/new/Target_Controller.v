@@ -3,7 +3,7 @@
 * Description: Decides whether to take a branch or a jump based on
 * control signals and condition flags from ALU.
 * Implements Zero signal based branching decisions.
-* Updated for EX stage signal naming in 5-stage pipeline.
+* Stage: EX
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

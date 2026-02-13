@@ -11,6 +11,7 @@
 
 `timescale 1ns / 1ps
 
+//(* dont_touch = "true" *)
 module Register_File #(
     parameter WIDTH      = 32,
     parameter REG_COUNT  = 32
@@ -24,9 +25,9 @@ module Register_File #(
     input  wire [WIDTH-1:0]             WB_WriteData, // Origin: Write-Back Mux (Selects between ALU Result or Memory Data)
     
     // Read Ports (Signals come from the current Instruction in ID stage)
-    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,   // Origin: IF/ID Pipeline Register (Instr[19:15])
-    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,   // Origin: IF/ID Pipeline Register (Instr[24:20])
-    input  wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,    // Origin: IF/ID Pipeline Register (Instr[11:7] - Source 3 for MAC)
+    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,   // Origin: Instruction Splitter (Instr[19:15])
+    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,   // Origin: Instruction Splitter (Instr[24:20])
+    input  wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,    // Origin: Instruction Splitter (Instr[11:7] - Source 3 for MAC)
     
     // Data Outputs (Going into the ID/EX Pipeline Register)
     output wire [WIDTH-1:0]             ID_Rs1Data,   // Destination: ID/EX Pipeline Register

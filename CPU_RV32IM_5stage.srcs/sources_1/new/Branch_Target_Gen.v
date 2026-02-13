@@ -3,7 +3,7 @@
 * Description: Computes the branch target address by adding 
 * the already-aligned Immediate (from Imm_Gen) 
 * to the current PC.
-* Updated for 5-stage pipeline.
+* Stage: EX
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */

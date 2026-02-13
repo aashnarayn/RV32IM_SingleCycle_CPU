@@ -4,7 +4,7 @@
 *              BranchSel, ImmediateSrc and Opcodes with readable definitions 
 *              for the Control Logic and ALU modules for readability.
 * Author: Aashrith S Narayn
-* Date: 10/09/2025
+* Date: 14/02/2026
 */
 
 `ifndef CPU_CONTROL_CODES_VH
@@ -42,6 +42,7 @@
 `define ALU_DIVU          6'b010101
 `define ALU_REM           6'b010110
 `define ALU_REMU          6'b010111
+`define ALU_MAC           6'b011000    // NEW: Internal ALU code for MAC/MACI
 
 //--------------- Instruction Aliases ------------------
 //R-type and I-type
@@ -58,6 +59,8 @@
 `define ALU_SRAI          `ALU_SRA
 `define ALU_SLTI          `ALU_SLT
 `define ALU_SLTIU         `ALU_SLTU
+
+`define ALU_MACI          `ALU_MAC
 
 // Branch aliases
 `define ALU_BEQ           `ALU_EQ
@@ -139,7 +142,7 @@
 
 
 //==========================================================================
-//MemDataType Codes - for Load/Store Instructions (used by Control Unit)
+//MemDataType Codes - for Load/Store Instructions (used by Control & DMEM)
 //==========================================================================
 
 `define MEM_BYTE_SIGNED     3'b000     // LB / SB   - Load/Store signed byte
@@ -170,11 +173,13 @@
 `define OPCODE_AUIPC   7'b0010111
 `define OPCODE_JAL     7'b1101111
 `define OPCODE_JALR    7'b1100111
+`define OPCODE_MAC     7'b0001011   // RISC-V custom MAC: funct3 for MAC- 000, for MACI - 001
+
 
 
 
 //=======================================================
-// Forwarding Mux Codes - For EX Stage Forwarding Logic
+//Forwarding Mux Codes - For EX Stage Forwarding Logic
 //=======================================================
 `define FWD_NO_FORWARD  2'b00  // Use value from ID/EX Register (No Hazard)
 `define FWD_FROM_MEM    2'b10  // Forward from EX/MEM Register (EX Hazard)
@@ -192,6 +197,7 @@
 //Avoids synthezisable blocks with ifndef, for easy testing  
 //===========================================================
 
+// NOTE: ABSOLUTE PATHS ARE USED HERE, PLEASE CHANGE AS PER PROJECT DIRECTORY LOCATION
 //reading from file
 `define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
 `define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"

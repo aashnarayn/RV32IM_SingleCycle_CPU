@@ -2,6 +2,7 @@
 * Module: Program_Counter.v
 * Description: Holds the address of the current instruction and updates it on
 * each clock cycle if PCWrite is asserted. Supports synchronous reset.
+* Stage - IF
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */
