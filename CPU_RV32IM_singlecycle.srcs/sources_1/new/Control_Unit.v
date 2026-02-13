@@ -204,7 +204,7 @@ module Control_Unit #(
                     // REGISTER MODE (mac rd, rs1, rs2)
                     ImmediateSrc = `IMM_NONE;
                     ALUSrc2      = 1'b0;     // Use Rs2
-                end else begin
+                end else if (funct3 == 3'b001) begin
                     // IMMEDIATE MODE (maci rd, rs1, imm)
                     ImmediateSrc = `IMM_I;   // Extract Immediate
                     ALUSrc2      = 1'b1;     // Use Immediate
