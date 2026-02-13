@@ -16,7 +16,7 @@
 //=======================================================
 
 //---------------- Core ALU Function Codes ------------------
-`define ALU_ADD           6'b000000     //unreachable in ALU (synthesis)
+`define ALU_ADD           6'b000000     
 `define ALU_SUB           6'b000001
 `define ALU_AND           6'b000010
 `define ALU_OR            6'b000011
@@ -24,8 +24,8 @@
 `define ALU_SLL           6'b000101
 `define ALU_SRL           6'b000110
 `define ALU_SRA           6'b000111
-`define ALU_SLT           6'b001000     //unreachable in ALU (synthesis)
-`define ALU_SLTU          6'b001001     //unreachable in ALU (synthesis)
+`define ALU_SLT           6'b001000     
+`define ALU_SLTU          6'b001001  
 `define ALU_GE            6'b001010  
 `define ALU_GEU           6'b001011
 `define ALU_EQ            6'b001100
@@ -173,6 +173,15 @@
 
 
 
+//=======================================================
+// Forwarding Mux Codes - For EX Stage Forwarding Logic
+//=======================================================
+`define FWD_NO_FORWARD  2'b00  // Use value from ID/EX Register (No Hazard)
+`define FWD_FROM_MEM    2'b10  // Forward from EX/MEM Register (EX Hazard)
+`define FWD_FROM_WB     2'b01  // Forward from MEM/WB Register (MEM Hazard)
+
+
+
 
 
 //===========================================================
@@ -184,12 +193,12 @@
 //===========================================================
 
 //reading from file
-`define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
-`define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
+`define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
+`define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
 
 //writing to file
-`define IMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
-`define DMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
+`define IMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
+`define DMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
 
 //simulation params
 `define SIM_TIME    10000

@@ -1,11 +1,10 @@
 /*
 * Module: Control_Unit.v
 * Description: Decodes the opcode of the current instruction and generates all necessary control signals 
-*              required to drive the datapath components, including MDSel (for ALU) ImmediateSrc, ALUOp, ALUSrc1&2, MemRead, 
-*              MemWrite, RegWrite, TargetSel, MemToReg and MemDataType (for Load Store data size). 
-*              Handles control for RV32I and RV32M instructions.
+* required to drive the datapath components. Resides in the ID stage.
+* Signals generated here are "bundled" and passed to EX, MEM, and WB stages.
 * Author: Aashrith S Narayn
-* Date: 10/09/2025
+* Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
@@ -16,212 +15,215 @@ module Control_Unit #(
     parameter WIDTH       = 32,
     parameter INSTR_WIDTH = 32
     )(
-    input  wire [INSTR_WIDTH-1:0] Instr_RV32IM,  
+    input  wire [INSTR_WIDTH-1:0] ID_Instr_RV32IM,  // Origin: IF/ID Pipeline Register
     
-    output reg [2:0]              ALUOp,
-    output reg                    MDSel,
-    //output reg                    MACSel,
-    output reg [2:0]              ImmediateSrc,
-    output reg [3:0]              TargetSel,
-    output reg                    RegWrite,
-    output reg                    MemRead,
-    output reg                    MemWrite,
-    output reg [1:0]              MemToReg,
-    output reg [2:0]              MemDataType,
-    output reg                    ALUSrc1, ALUSrc2
+    // Execution Control (To be used in EX Stage)
+    output reg [2:0]              ID_ALUOp,         // Destination: ID/EX Pipeline Register
+    output reg                    ID_MDSel,         // Destination: ID/EX Pipeline Register
+    //output reg                  ID_MACSel,        // Reserved for future MAC (Dest: ID/EX Pipeline Reg)
+    output reg [3:0]              ID_TargetSel,     // Destination: ID/EX Pipeline Register (Branch Unit)
+    output reg                    ID_ALUSrc1,       // Destination: ID/EX Pipeline Register (0=Rs1, 1=PC)
+    output reg                    ID_ALUSrc2,       // Destination: ID/EX Pipeline Register (0=Rs2, 1=Imm)
+    
+    // Memory Control (To be used in MEM Stage)
+    output reg                    ID_MemRead,       // Destination: ID/EX Pipeline Register -> EX/MEM Pipeline Register
+    output reg                    ID_MemWrite,      // Destination: ID/EX Pipeline Register -> EX/MEM Pipeline Register
+    output reg [2:0]              ID_MemDataType,   // Destination: ID/EX Pipeline Register -> EX/MEM Pipeline Register
+    
+    // Write-Back Control (To be used in WB Stage)
+    output reg                    ID_RegWrite,      // Destination: ID/EX -> EX/MEM -> MEM/WB Pipeline Register
+    output reg [1:0]              ID_MemToReg,      // Destination: ID/EX -> EX/MEM -> MEM/WB Pipeline Register
+    
+    // Local Decode Control (Used immediately in ID Stage)
+    output reg [2:0]              ID_ImmediateSrc   // Destination: Imm_Gen (ID Stage)
     );
     
-    wire [6:0] Opcode = Instr_RV32IM[6:0];      // Instruction length Not parameterized because Instruction decoding...
-    wire [6:0] funct7 = Instr_RV32IM[31:25];    // ...and is standard for all RV ISA specs.
-    wire [2:0] funct3 = Instr_RV32IM[14:12];    //Hardcoded for standard format instead.
+    wire [6:0] Opcode = ID_Instr_RV32IM[6:0];      
+    wire [6:0] funct7 = ID_Instr_RV32IM[31:25];    
+    wire [2:0] funct3 = ID_Instr_RV32IM[14:12];    
     
-    wire [14:0] Control_unused = {Instr_RV32IM[24:15], Instr_RV32IM[11:7]};    //to avoid linter violations
+    wire [14:0] Control_unused = {ID_Instr_RV32IM[24:15], ID_Instr_RV32IM[11:7]};
     
     always @(*) begin
         case (Opcode)
         
             `OPCODE_RTYPE:  begin            //R-type Instructions
-            
+                // Note: Logic allows for future MAC expansion here
                 case (funct7)
                     7'b0000000,
                     7'b0100000: begin
-                        ALUOp = `ALUOP_RTYPE;                           //RV32I
-                        MDSel = 1'b0;                                   //Initiates ALU_RV32I
+                        ID_ALUOp = `ALUOP_RTYPE;                           
+                        ID_MDSel = 1'b0;                                   
                     end
                     
                     7'b0000001: begin
-                        ALUOp = `ALUOP_RMUL;                            //RV32M
-                        MDSel = 1'b1;                                   //Initiates ALU_RV32M
+                        ID_ALUOp = `ALUOP_RMUL;                            
+                        ID_MDSel = 1'b1;                                   
                     end
                     
                     default:    begin
-                        ALUOp = `ALUOP_NOP;                             //fallback
-                        MDSel = 1'b0;
+                        ID_ALUOp = `ALUOP_NOP;                             
+                        ID_MDSel = 1'b0;
                     end
-                    
                 endcase
                 
-                ImmediateSrc = `IMM_NONE;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b00;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b0;
+                ID_ImmediateSrc = `IMM_NONE;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b00;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b0;
             end
             
-            `OPCODE_ITYPE:  begin            //I-type Arithmetic and Logical Instructions
-                ALUOp        = `ALUOP_ITYPE;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_I;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b00;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b1;
+            `OPCODE_ITYPE:  begin            //I-type Arithmetic
+                ID_ALUOp        = `ALUOP_ITYPE;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_I;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b00;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b1;
             end
             
-            `OPCODE_LOAD:   begin            //Load Instructions (I-type)
-                ALUOp        = `ALUOP_LSJ;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_I;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b1;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b01;
+            `OPCODE_LOAD:   begin            //Load Instructions
+                ID_ALUOp        = `ALUOP_LSJ;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_I;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b1;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b01;
                 
                 case(funct3)
-                    `MEM_BYTE_SIGNED,                                   //LB
-                    `MEM_HALF_SIGNED,                                   //LH
-                    `MEM_WORD,                                          //LW
-                    `MEM_BYTE_UNSIGNED,                                 //LBU
-                    `MEM_HALF_UNSIGNED:  MemDataType  = funct3;         //LHU                  
-                    default:             MemDataType  = `MEM_INVALID;   //fallback
+                    `MEM_BYTE_SIGNED,                                   
+                    `MEM_HALF_SIGNED,                                   
+                    `MEM_WORD,                                          
+                    `MEM_BYTE_UNSIGNED,                                 
+                    `MEM_HALF_UNSIGNED:  ID_MemDataType  = funct3;                           
+                    default:             ID_MemDataType  = `MEM_INVALID;   
                 endcase
                 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b1;
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b1;
             end
             
-            `OPCODE_STORE:  begin            //SW (S-type Instruction)
-                ALUOp        = `ALUOP_LSJ;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_S;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b0;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b1;
-                MemToReg     = 2'bxx;
+            `OPCODE_STORE:  begin            //SW
+                ID_ALUOp        = `ALUOP_LSJ;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_S;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b0;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b1;
+                ID_MemToReg     = 2'bxx;
                 
                 case(funct3)
-                    `MEM_BYTE_SIGNED,                                   //SB
-                    `MEM_HALF_SIGNED,                                   //SH
-                    `MEM_WORD:           MemDataType  = funct3;         //SW                 
-                    default:             MemDataType  = `MEM_INVALID;   //fallback
+                    `MEM_BYTE_SIGNED,                                   
+                    `MEM_HALF_SIGNED,                                   
+                    `MEM_WORD:           ID_MemDataType  = funct3;                          
+                    default:             ID_MemDataType  = `MEM_INVALID;   
                 endcase
                 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b1;
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b1;
             end
             
-            `OPCODE_BRANCH: begin            //B-type Instructions
-                ALUOp        = `ALUOP_BRANCH;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_B;
+            `OPCODE_BRANCH: begin            //B-type
+                ID_ALUOp        = `ALUOP_BRANCH;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_B;
                 
-                case ({1'b0,funct3})        //since TargetSel is 4 bits long to account for JALR in branch/jump target selection
-                    `BR_EQ,
-                    `BR_NE,
-                    `BR_LT,
-                    `BR_GE,
-                    `BR_LTU,
-                    `BR_GEU: TargetSel = {1'b0,funct3}; 
-                    default: TargetSel = `TR_NOP;
+                case ({1'b0,funct3})
+                    `BR_EQ, `BR_NE, `BR_LT,
+                    `BR_GE, `BR_LTU, `BR_GEU: ID_TargetSel = {1'b0,funct3}; 
+                    default:                  ID_TargetSel = `TR_NOP;
                 endcase
                 
-                RegWrite     = 1'b0;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'bxx;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b0;
+                ID_RegWrite     = 1'b0;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'bxx;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b0;
             end
             
-            `OPCODE_LUI:    begin            //LUI (U-type Instruction)
-                ALUOp        = `ALUOP_UTYPE;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_U;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b00;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;     
-                ALUSrc2      = 1'b1;
+            `OPCODE_LUI:    begin            //LUI
+                ID_ALUOp        = `ALUOP_UTYPE;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_U;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b00;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;     
+                ID_ALUSrc2      = 1'b1;
             end
             
-            `OPCODE_AUIPC:  begin            //AUIPC (U-type Instruction)
-                ALUOp        = `ALUOP_UTYPE;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_U;
-                TargetSel    = `TR_NOP; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b00;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b1;
-                ALUSrc2      = 1'b1;
+            `OPCODE_AUIPC:  begin            //AUIPC
+                ID_ALUOp        = `ALUOP_UTYPE;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_U;
+                ID_TargetSel    = `TR_NOP; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b00;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b1;
+                ID_ALUSrc2      = 1'b1;
             end
                 
-            `OPCODE_JAL:    begin            //JAL (J-type Instruction)
-                ALUOp        = `ALUOP_JUMP;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_J;
-                TargetSel    = `UJ_AL; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b10;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b1;            //PC
-                ALUSrc2      = 1'b1;            //Imm
+            `OPCODE_JAL:    begin            //JAL
+                ID_ALUOp        = `ALUOP_JUMP;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_J;
+                ID_TargetSel    = `UJ_AL; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b10;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b1;            //PC
+                ID_ALUSrc2      = 1'b1;            //Imm
             end
             
-            `OPCODE_JALR:   begin            //JALR (I-type Instruction)
-                ALUOp        = `ALUOP_LSJ;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_I;
-                TargetSel    = `UJ_ALR; 
-                RegWrite     = 1'b1;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b10;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;            //Rs1
-                ALUSrc2      = 1'b1;            //Imm
+            `OPCODE_JALR:   begin            //JALR
+                ID_ALUOp        = `ALUOP_LSJ;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_I;
+                ID_TargetSel    = `UJ_ALR; 
+                ID_RegWrite     = 1'b1;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b10;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;            //Rs1
+                ID_ALUSrc2      = 1'b1;            //Imm
             end
             
-            default:        begin            //Default fallback
-                ALUOp        = `ALUOP_NOP;
-                MDSel        = 1'b0;
-                ImmediateSrc = `IMM_NONE;
-                TargetSel    = `TR_NOP;
-                RegWrite     = 1'b0;
-                MemRead      = 1'b0;
-                MemWrite     = 1'b0;
-                MemToReg     = 2'b00;
-                MemDataType  = `MEM_INVALID; 
-                ALUSrc1      = 1'b0;
-                ALUSrc2      = 1'b0;
+            default:        begin            //Default
+                ID_ALUOp        = `ALUOP_NOP;
+                ID_MDSel        = 1'b0;
+                ID_ImmediateSrc = `IMM_NONE;
+                ID_TargetSel    = `TR_NOP;
+                ID_RegWrite     = 1'b0;
+                ID_MemRead      = 1'b0;
+                ID_MemWrite     = 1'b0;
+                ID_MemToReg     = 2'b00;
+                ID_MemDataType  = `MEM_INVALID; 
+                ID_ALUSrc1      = 1'b0;
+                ID_ALUSrc2      = 1'b0;
             end
         endcase
     end

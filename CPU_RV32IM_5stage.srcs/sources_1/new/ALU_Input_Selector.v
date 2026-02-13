@@ -1,10 +1,11 @@
 /*
 * Module: ALU_input_selector.v
 * Description: Selects 32 bit inputs from Registers, Program Counter 
-*              and Immediate Generator according to control signal inputs 
-*              to feed into ALU. Wires RdData directly to ALU for MAC operations.
+* and Immediate Generator according to control signal inputs 
+* to feed into ALU. Wires RdData directly to ALU for MAC operations.
+* Updated for EX stage signal naming in 5-stage pipeline with Forwarding hooks.
 * Author: Aashrith S Narayn
-* Date: 03/07/2025
+* Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
@@ -12,28 +13,28 @@
 
 //MUX for Operand 1 of ALU
 module Op1_Mux #(
-    parameter WIDTH    = 32,    //NOTE: PC_WIDTH AND WIDTH HAS TO BE SAME, OTHERWISE SIGN EXTENSION IS NEEDED 
-    parameter PC_WIDTH = 32     //ON ONE OPERAND OR THE OTHER - COMPLICATES ALU INPUT SELECTION AND ALU DATA WIDTH
+    parameter WIDTH    = 32,    
+    parameter PC_WIDTH = 32     
     )(
-    input wire [WIDTH-1:0]    Rs1Data,
-    input wire [PC_WIDTH-1:0] PC,
-    input wire                ALUSrc1,
-    output reg [WIDTH-1:0]    Op1
+    input wire [WIDTH-1:0]    EX_Rs1Data, // Origin: Output of Forwarding Unit Mux A (Selects ID/EX, EX/MEM, or MEM/WB)
+    input wire [PC_WIDTH-1:0] EX_PC,      // Origin: ID/EX Pipeline Register
+    input wire                EX_ALUSrc1, // Origin: ID/EX Pipeline Register (Control Bundle)
+    output reg [WIDTH-1:0]    EX_Op1
     );
     always @(*) begin
-        Op1 = (ALUSrc1) ? PC : Rs1Data;     //PC used by LUI, AUIPC and JAL
+        EX_Op1 = (EX_ALUSrc1) ? EX_PC : EX_Rs1Data;     //PC used by LUI, AUIPC and JAL
     end
 endmodule
 
 //MUX for Operand 2 of ALU
 module Op2_Mux #(parameter WIDTH = 32)(
-    input wire [WIDTH-1:0] Rs2Data,
-    input wire [WIDTH-1:0] Imm,
-    input wire             ALUSrc2,
-    output reg [WIDTH-1:0] Op2
+    input wire [WIDTH-1:0] EX_Rs2Data, // Origin: Output of Forwarding Unit Mux B (Selects ID/EX, EX/MEM, or MEM/WB)
+    input wire [WIDTH-1:0] EX_Imm,     // Origin: ID/EX Pipeline Register
+    input wire             EX_ALUSrc2, // Origin: ID/EX Pipeline Register (Control Bundle)
+    output reg [WIDTH-1:0] EX_Op2
     );
     always @(*) begin
-        Op2 = (ALUSrc2) ? Imm : Rs2Data;    //Imm used by I,U-type, LW,SW etc
+        EX_Op2 = (EX_ALUSrc2) ? EX_Imm : EX_Rs2Data;    //Imm used by I,U-type, LW,SW etc
     end
 endmodule
 
@@ -41,29 +42,34 @@ endmodule
 //(* dont_touch = "true" *)
 module ALU_Input_Selector  #(
     parameter WIDTH    = 32,
-    parameter PC_WIDTH = 32     //extensible program counter design
+    parameter PC_WIDTH = 32     
     )(
-    input  wire [WIDTH-1:0]    Rs1Data, Rs2Data, RdData,
-    input  wire [PC_WIDTH-1:0] PC,
-    input  wire [WIDTH-1:0]    Immediate,
-    input  wire                ALUSrc1,ALUSrc2,
-    output wire [WIDTH-1:0]    Op1, Op2, Op3
+    input  wire [WIDTH-1:0]    EX_Rs1Data,     // Origin: Forwarding Unit Mux A Output
+    input  wire [WIDTH-1:0]    EX_Rs2Data,     // Origin: Forwarding Unit Mux B Output
+    input  wire [WIDTH-1:0]    EX_RdData_MAC,  // Origin: ID/EX Pipeline Register (Future: Forwarding Unit Mux C)
+    input  wire [PC_WIDTH-1:0] EX_PC,          // Origin: ID/EX Pipeline Register
+    input  wire [WIDTH-1:0]    EX_Imm,         // Origin: ID/EX Pipeline Register
+    input  wire                EX_ALUSrc1,     // Origin: ID/EX Pipeline Register
+    input  wire                EX_ALUSrc2,     // Origin: ID/EX Pipeline Register
+    output wire [WIDTH-1:0]    EX_Op1, 
+    output wire [WIDTH-1:0]    EX_Op2, 
+    output wire [WIDTH-1:0]    EX_Op3
     );
     
     Op1_Mux #(.WIDTH(WIDTH), .PC_WIDTH(PC_WIDTH)) Mux1(
-        .Rs1Data(Rs1Data),
-        .PC(PC),
-        .ALUSrc1(ALUSrc1),
-        .Op1(Op1)    
+        .EX_Rs1Data(EX_Rs1Data),
+        .EX_PC(EX_PC),
+        .EX_ALUSrc1(EX_ALUSrc1),
+        .EX_Op1(EX_Op1)    
         );
         
     Op2_Mux #(.WIDTH(WIDTH)) Mux2(
-        .Rs2Data(Rs2Data),
-        .Imm(Immediate),
-        .ALUSrc2(ALUSrc2),
-        .Op2(Op2)    
+        .EX_Rs2Data(EX_Rs2Data),
+        .EX_Imm(EX_Imm),
+        .EX_ALUSrc2(EX_ALUSrc2),
+        .EX_Op2(EX_Op2)    
         );
         
-    assign Op3 = RdData;
+    assign EX_Op3 = EX_RdData_MAC; // Origin: ID/EX Pipeline Register -> Future MAC Adder
     
 endmodule

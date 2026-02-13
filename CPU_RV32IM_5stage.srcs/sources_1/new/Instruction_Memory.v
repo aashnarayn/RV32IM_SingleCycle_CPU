@@ -1,10 +1,11 @@
 /*
 * Module: Instruction_Memory.v
 * Description: Stores and serves 32-bit instructions to the CPU based on the current 
-*              Program Counter (PC). Supports asynchronous fetch from an initialized 
-*              instruction memory ROM. Read-only in RV32IM single-cycle architecture.
+* Program Counter (PC). Supports asynchronous fetch from an initialized 
+* instruction memory ROM. Read-only in RV32IM single-cycle architecture.
+* Updated to support Synchronous read for 5-stage pipelining.
 * Author: Aashrith S Narayn
-* Date: 06/07/2025
+* Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
@@ -16,39 +17,30 @@ module Instruction_Memory #(
     parameter INSTR_WIDTH = 32,
     parameter IMEM_DEPTH  = 256
     )(
-    input  wire [PC_WIDTH-1:0]    PC,            //we use PC[9:2] to navigate 
-    output reg  [INSTR_WIDTH-1:0] Instr_RV32IM  
+    input  wire                   CPU_clk,          // Added for synchronous read
+    input  wire [PC_WIDTH-1:0]    IF_PC,            // Origin: Program Counter
+    output reg  [INSTR_WIDTH-1:0] IF_Instr_RV32IM   // Destination: IF/ID Pipeline Register
     );
     
     localparam BYTE_RANGE = $clog2(4*IMEM_DEPTH);
     
-    //Instruction Memory Array - byte wise mem access
-    (* ram_style = "distributed" *)    //can't be inferred as Block RAM due to always @(*) block
+    // Instruction Memory Array
+    (* ram_style = "block" *)                    // Inferable as Block RAM due to synchronous read
     reg [INSTR_WIDTH-1:0] InstrMem [0:IMEM_DEPTH-1];
     
-    //Instruction Read logic (Combinational)
-    always @(*) begin
-        Instr_RV32IM = InstrMem[PC[BYTE_RANGE-1:2]];
+    // Instruction Read logic (Synchronous)
+    // The instruction for the current PC will be ready at the 
+    // beginning of the next clock cycle (the ID stage).
+    always @(posedge CPU_clk) begin
+        IF_Instr_RV32IM <= InstrMem[IF_PC[BYTE_RANGE-1:2]];
     end
     
+    // Linter violation avoidance
+    wire [PC_WIDTH-BYTE_RANGE-1:0] IMEM_unused_bits = |{IF_PC[PC_WIDTH-1:BYTE_RANGE], IF_PC[1:0]};
     
-    
-    //WARNING
-    //the following block is not needed as part of Official design
-    //Prevent optimization
-    /*
-    always @(posedge PC[0]) begin
-        InstrMem[0] <= InstrMem[0]; // Dummy driver to prevent optimization
-    end
-    */
-    
-    wire [PC_WIDTH-BYTE_RANGE-1:0] IMEM_unused_bits = |{PC[PC_WIDTH-1:BYTE_RANGE], PC[1:0]};    //to avoid linter violations
-    
-    //Initialising InstrMem with a set of assembly codes during simulation (preload)
-    //No pragmas as synthesis tool is required to see this preload
+    // Initialising InstrMem with program data
     initial begin
         $readmemh(`IMEM_HEX_PROGRAM, InstrMem);
-        //$display("IMEM[0]=%h IMEM[1]=%h", InstrMem[0], InstrMem[1]);
     end
     
     //pragma synthesis off

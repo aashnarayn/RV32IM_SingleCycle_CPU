@@ -1,9 +1,9 @@
 /*
 * Module: PC_Adder.v
 * Description: Computes the address of the next sequential instruction 
-*              by adding 4 to the current Program Counter (PC).
+* by adding 4 to the current Program Counter (PC).
 * Author: Aashrith S Narayn
-* Date: 04/07/2025
+* Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
@@ -13,12 +13,12 @@ module PC_Incrementer #(
     parameter PC_WIDTH = 32,
     parameter PC_STEP  = 4
     )(
-    input  wire [PC_WIDTH-1:0] PC,
-    output reg  [PC_WIDTH-1:0] PC_Plus_4
+    input  wire [PC_WIDTH-1:0] IF_PC,        // Origin: Program Counter (IF Stage)
+    output reg  [PC_WIDTH-1:0] IF_PC_Plus_4  // Destination: Next-PC Mux (IF) & IF/ID Pipeline Register
     );
     
     always @(*) begin
-        PC_Plus_4 = PC + PC_STEP;    //incrementing PC with step size
+        IF_PC_Plus_4 = IF_PC + PC_STEP;    //incrementing PC with step size
     end
     
 endmodule
