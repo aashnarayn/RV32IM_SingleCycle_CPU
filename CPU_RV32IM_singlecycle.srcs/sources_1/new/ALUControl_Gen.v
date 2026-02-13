@@ -85,9 +85,14 @@ module ALUControl_Gen #(
           //RV32M (Multiply & Divide)
           `ALUOP_RMUL:   begin
               // Check for Custom MAC (funct7 is 0)
-              if (funct7 == 7'b0000010) begin
-                  ALUControl = `ALU_MAC;
-              end
+             // if (funct7 == 7'b0000010) begin
+              //    ALUControl = `ALU_MAC;
+              //end
+               if (Instr_RV32IM[6:0] == 7'b0001011) begin
+                 // FORCE Lower Multiply for BOTH 'mac' and 'maci'
+                 // The MAC_Adder hardware handles the +Accumulate part.
+                 ALUControl = `ALU_MUL; 
+                end 
               else begin
                   // Standard RV32M Logic (MUL/DIV/etc)
                   case (funct3)
