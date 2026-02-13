@@ -60,7 +60,7 @@ module ALU_RV32I #(parameter WIDTH = 32)(       //NOTE: PC_WIDTH must be the sam
                 `ALU_BEQ,
                 `ALU_BNE:    ALUResult_I = ((Op1 - Op2) == 0) ? ZERO : ONE;              //BEQ, BNE
                 `ALU_LUI:    ALUResult_I = Op2;                                          //LUI - Result = Imm
-                        
+                `ALU_MAC:    ALUResult_I = ZERO;       
                 //default cases
                 `ALU_NOP:    ALUResult_I = ZERO;                                         //NOP
                 default:     ALUResult_I = ZERO;                                         //Unknown ALUControl, default to NOP

@@ -85,7 +85,7 @@ module ALUControl_Gen #(
           //RV32M (Multiply & Divide)
           `ALUOP_RMUL:   begin
               // Check for Custom MAC (funct7 is 0)
-              if (funct7 == 7'b0000000) begin
+              if (funct7 == 7'b0000010) begin
                   ALUControl = `ALU_MAC;
               end
               else begin
