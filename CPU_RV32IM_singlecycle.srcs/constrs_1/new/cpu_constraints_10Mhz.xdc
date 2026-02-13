@@ -1,7 +1,7 @@
 ## ----------------------------------------------------------------------
 ## 1. Clock Definition (10 MHz = 100ns Period)
 ## ----------------------------------------------------------------------
-create_clock -period 200.000 -name sys_clk -waveform {0.000 100.000} [get_ports CPU_clk]
+create_clock -period 100.000 -name sys_clk -waveform {0.000 50.000} [get_ports CPU_clk]
 
 ## ----------------------------------------------------------------------
 ## 2. Asynchronous Path Exceptions
@@ -29,5 +29,5 @@ set_false_path -to [get_ports TIMING_CHECK_LED]
 #set_false_path -from [get_cells CPU_ProgCount/PC_reg[*]] -to [all_outputs]
 
 # If you prefer not to use False Paths for all, use a very lenient delay:
-set_output_delay -clock sys_clk -max 180.000 [all_outputs]
-set_output_delay -clock sys_clk -min -10.000 [all_outputs]
+set_output_delay -clock sys_clk -max 50.000 [all_outputs]
+set_output_delay -clock sys_clk -min  0.000 [all_outputs]

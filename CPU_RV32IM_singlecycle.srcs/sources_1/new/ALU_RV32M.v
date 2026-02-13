@@ -13,7 +13,7 @@
 //NOTE: This ALU can be scaled from 32 bit to any instruction length using the parameter WIDTH
 //(* dont_touch = "true" *)
 module ALU_RV32M #(parameter WIDTH = 32)(       //NOTE: PC_WIDTH must be the same as WIDTH due to both register and PC being operands in the same ALU
-    input  wire signed [WIDTH-1:0] Op1, Op2,    //NOTE below
+    input  wire signed [WIDTH-1:0] Op1, Op2,Op3,    //NOTE below
     input  wire        [5:0]       ALUControl,
     input  wire                    MDSel,
     output reg         [WIDTH-1:0] ALUResult_M,
@@ -91,7 +91,10 @@ module ALU_RV32M #(parameter WIDTH = 32)(       //NOTE: PC_WIDTH must be the sam
                     if (Op2 != 0) ALUResult_M = uOp1 % uOp2;
                     else          ALUResult_M = Op1;                     //dividend % 0 = dividend
                 end
-                
+                `ALU_MAC: begin
+                    mul_temp    = Op1 * Op2;       // 10 * 4 = 40
+                    ALUResult_M = mul_temp[WIDTH-1:0] + Op3; // 40 + 100 = 140
+                end
                 //No Operation (default case)
                 `ALU_NOP:         ALUResult_M = ZERO;
                 

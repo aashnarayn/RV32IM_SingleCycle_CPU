@@ -84,19 +84,25 @@ module ALUControl_Gen #(
     
           //RV32M (Multiply & Divide)
           `ALUOP_RMUL:   begin
-              case (funct3)
-                  3'b000:  ALUControl = `ALU_MUL;
-                  3'b001:  ALUControl = `ALU_MULH;
-                  3'b010:  ALUControl = `ALU_MULHSU;
-                  3'b011:  ALUControl = `ALU_MULHU;
-                  3'b100:  ALUControl = `ALU_DIV;
-                  3'b101:  ALUControl = `ALU_DIVU;
-                  3'b110:  ALUControl = `ALU_REM;
-                  3'b111:  ALUControl = `ALU_REMU;
-                  default: ALUControl = `ALU_NOP;
-              endcase
+              // Check for Custom MAC (funct7 is 0)
+              if (funct7 == 7'b0000000) begin
+                  ALUControl = `ALU_MAC;
+              end
+              else begin
+                  // Standard RV32M Logic (MUL/DIV/etc)
+                  case (funct3)
+                      3'b000:  ALUControl = `ALU_MUL;
+                      3'b001:  ALUControl = `ALU_MULH;
+                      3'b011:  ALUControl = `ALU_MULHU;
+                      3'b100:  ALUControl = `ALU_DIV;
+                      3'b101:  ALUControl = `ALU_DIVU;
+                      3'b110:  ALUControl = `ALU_REM;
+                      3'b111:  ALUControl = `ALU_REMU;
+                      default: ALUControl = `ALU_NOP;
+                  endcase
+              end
           end
-    
+          
           //U-Type (LUI & AUPIC)
           `ALUOP_UTYPE : begin
               ALUControl = (Opcode == `OPCODE_LUI) ? `ALU_LUI : `ALU_AUIPC;

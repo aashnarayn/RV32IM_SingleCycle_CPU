@@ -42,6 +42,9 @@
 `define ALU_DIVU          6'b010101
 `define ALU_REM           6'b010110
 `define ALU_REMU          6'b010111
+//MAC
+`define ALU_MAC           6'b011000
+
 
 //--------------- Instruction Aliases ------------------
 //R-type and I-type
@@ -92,7 +95,6 @@
 `define ALUOP_RMUL     3'b100   //RV32M (MUL/DIV)
 `define ALUOP_UTYPE    3'b101   //LUI, AUIPC
 `define ALUOP_JUMP     3'b110   //JAL
-
 //Optional NOP or fallback (not used directly)
 `define ALUOP_NOP      3'b111
 
@@ -170,7 +172,7 @@
 `define OPCODE_AUIPC   7'b0010111
 `define OPCODE_JAL     7'b1101111
 `define OPCODE_JALR    7'b1100111
-
+`define OPCODE_MAC     7'b0001011   // RISC-V custom MAC Instr
 
 
 
@@ -184,12 +186,13 @@
 //===========================================================
 
 //reading from file
-`define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
-`define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
+`define IMEM_HEX_PROGRAM "/home/chin/FYP/RV32IM_SingleCycle_CPU/CPU_RV32IM_singlecycle.srcs/sim_2/new/Test_Hex_Files/IMEM_RV32IM_Program.mem"
+//`define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
+`define DMEM_HEX_BLOCK   "/home/chin/FYP/RV32IM_SingleCycle_CPU/CPU_RV32IM_singlecycle.srcs/sim_2/new/Test_Hex_Files/DMEM_Data_Block.mem"
 
 //writing to file
-`define IMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
-`define DMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_singlecycle/CPU_RV32IM_singlecycle.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
+`define IMEM_HEX_DUMP    "/home/chin/FYP/RV32IM_SingleCycle_CPU/CPU_RV32IM_singlecycle.srcs/sim_2/new/Test_Hex_Files/IMEM_RV32IM_Dump.mem"
+`define DMEM_HEX_DUMP    "/home/chin/FYP/RV32IM_SingleCycle_CPU/CPU_RV32IM_singlecycle.srcs/sim_2/new/Test_Hex_Files/DMEM_Data_Dump.mem"
 
 //simulation params
 `define SIM_TIME    10000

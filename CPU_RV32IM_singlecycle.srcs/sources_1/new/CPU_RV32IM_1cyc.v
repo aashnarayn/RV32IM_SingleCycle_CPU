@@ -90,7 +90,7 @@ module CPU_RV32IM_1cyc #(
     (* keep = "true" *) wire [PC_WIDTH-1:0]    PC_Plus_4;         //PCAdd --> NextPCMux, WrBackMux, UjTargetGen
     
     //RegFile
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  Rs1Data, Rs2Data, RdData;  //RegFile --> ALUInputSel, DMEM(Rs2Data)
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]  Rs1Data, Rs2Data, RdData;  //RegFile --> ALUInputSel, DMEM(Rs2Data) ,Holds the value of Rd (Accumulator)
     
     //Imm Gen
     (* keep = "true" *) wire [DATA_WIDTH-1:0]  Immediate;         //Imm Gen --> ALUInputSel, BrTargetGen
@@ -108,7 +108,7 @@ module CPU_RV32IM_1cyc #(
     (* keep = "true" *) wire                   ALUSrc1,ALUSrc2;   //Control --> ALUInputSel
     
     //ALUInputSel
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  Op1, Op2, Op3_dummy;          //ALUInputSel --> ALU_I, ALU_M
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]  Op1, Op2, Op3;          //ALUInputSel --> ALU_I, ALU_M
     
     //ALUCtrlGen
     (* keep = "true" *) wire [5:0]             ALUControl;        //ALUCtrlGen --> ALU_I, ALU_M
@@ -143,10 +143,11 @@ module CPU_RV32IM_1cyc #(
     //NextPCMux
     (* keep = "true" *) wire [PC_WIDTH-1:0]    PC_Next;           //NextPCMux --> ProgCount
         
-        
-        
-        
-        
+    //MAC Integration  
+ 
+    (* keep = "true" *) wire [DATA_WIDTH-1:0] MAC_Result;    // Holds (Op1 * Op2) + Op3
+    (* keep = "true" *) wire             MACSel;        // Control signal from Control Unit
+    reg [DATA_WIDTH-1:0] MAC_ACC;
     //----------------------------------------------------------------------------------
     //All CPU Modules (16 total)
     //----------------------------------------------------------------------------------
@@ -253,6 +254,7 @@ module CPU_RV32IM_1cyc #(
         .ALUOp(ALUOp),
         .ImmediateSrc(ImmediateSrc),
         .TargetSel(TargetSel),
+        .MACSel(MACSel),
         .MDSel(MDSel),
         .RegWrite(RegWrite),
         .MemWrite(MemWrite),
@@ -348,13 +350,20 @@ module CPU_RV32IM_1cyc #(
     CPU_ALU_M (
         .Op1(Op1),
         .Op2(Op2),
+        .Op3(RdData),
         .ALUControl(ALUControl),
         .MDSel(MDSel),
         .ALUResult_M(ALUResult_M),
         .Zero_M(Zero_M)
         );  
-      
-    
+        always @(posedge CPU_clk or negedge rst_sync_2) begin
+            if (!rst_sync_2)
+                MAC_ACC <= 0;
+            else if (MACSel)
+                MAC_ACC <= MAC_ACC + ALUResult_M;
+        end 
+        assign MAC_Result = MAC_ACC;
+
     //----------------------------    
     //Module 12
     //Target Controller
@@ -379,9 +388,11 @@ module CPU_RV32IM_1cyc #(
     CPU_ALUSelMux (
         .ALUResult_I(ALUResult_I),
         .ALUResult_M(ALUResult_M),
+        .MAC_Result(ALUResult_M),
         .Zero_I(Zero_I),
         .Zero_M(Zero_M),
         .MDSel(MDSel),
+        .MACSel(MACSel),
         .ALUResult(ALUResult),
         .Zero(Zero)
         );

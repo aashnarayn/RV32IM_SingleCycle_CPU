@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="CPU_RV32IM_Test_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="CPU_RV32IM_Test" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="71.166 ns"></ZoomStartTime>
+      <ZoomEndTime time="135.767 ns"></ZoomEndTime>
+      <Cursor1Time time="125.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="170"></NameColumnWidth>
+      <ValueColumnWidth column_width="113"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="7" />
+   <wvobject type="array" fp_name="/CPU_RV32IM_Test/CPU_Instr_RV32IM">
+      <obj_property name="ElementShortName">CPU_Instr_RV32IM[31:0]</obj_property>
+      <obj_property name="ObjectShortName">CPU_Instr_RV32IM[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/CPU_RV32IM_Test/CPU_WriteDataReg">
+      <obj_property name="ElementShortName">CPU_WriteDataReg[31:0]</obj_property>
+      <obj_property name="ObjectShortName">CPU_WriteDataReg[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/CPU_RV32IM_Test/CPU_DataPath/MemToReg">
+      <obj_property name="ElementShortName">MemToReg[1:0]</obj_property>
+      <obj_property name="ObjectShortName">MemToReg[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/CPU_RV32IM_Test/CPU_DataPath/RegWrite">
+      <obj_property name="ElementShortName">RegWrite</obj_property>
+      <obj_property name="ObjectShortName">RegWrite</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/CPU_RV32IM_Test/CPU_DataPath/ALUResult">
+      <obj_property name="ElementShortName">ALUResult[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ALUResult[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/CPU_RV32IM_Test/CPU_DataPath/MAC_Result">
+      <obj_property name="ElementShortName">MAC_Result[31:0]</obj_property>
+      <obj_property name="ObjectShortName">MAC_Result[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/CPU_RV32IM_Test/CPU_DataPath/MACSel">
+      <obj_property name="ElementShortName">MACSel</obj_property>
+      <obj_property name="ObjectShortName">MACSel</obj_property>
+   </wvobject>
+</wave_config>

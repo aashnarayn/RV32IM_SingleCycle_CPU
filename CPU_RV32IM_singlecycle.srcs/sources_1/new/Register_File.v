@@ -21,30 +21,37 @@ module Register_File #(
     input  wire [$clog2(REG_COUNT)-1:0] Rs1Addr, Rs2Addr,
     input  wire [$clog2(REG_COUNT)-1:0] RdAddr,
     input  wire [WIDTH-1:0]             WriteData,
-    output reg  [WIDTH-1:0]             Rs1Data, Rs2Data, RdData
+    output wire  [WIDTH-1:0]             Rs1Data, Rs2Data, RdData
     );
     
     //RV32IM Register Array
     reg [WIDTH-1:0] RegArray [0:REG_COUNT-1];
-    reg [WIDTH-1:0] MACReg;
     integer i;                                      //used for resetting RegArray
+
     
     localparam ADDR_WIDTH = $clog2(REG_COUNT); 
     localparam DATA_ZERO  = {WIDTH{1'b0}};
     localparam ADDR_ZERO  = {ADDR_WIDTH{1'b0}};
-    
+    assign Rs1Data = (Rs1Addr == 0) ? 0 : RegArray[Rs1Addr];
+    assign Rs2Data = (Rs2Addr == 0) ? 0 : RegArray[Rs2Addr];
+    assign RdData  = (RdAddr  == 0) ? 0 : RegArray[RdAddr];
     //Read Logic (Combinational)
-    always @(*) begin       
-        Rs1Data = (Rs1Addr == ADDR_ZERO) ? DATA_ZERO : RegArray[Rs1Addr];    //Reading Rs1
-        Rs2Data = (Rs2Addr == ADDR_ZERO) ? DATA_ZERO : RegArray[Rs2Addr];    //Reading Rs2
-        RdData  = (RdAddr  == ADDR_ZERO) ? DATA_ZERO : RegArray[RdAddr];     //Reading Rd (for MAC)
-    end
+//    always @(*) begin       
+//        Rs1Data = (Rs1Addr == ADDR_ZERO) ? DATA_ZERO : RegArray[Rs1Addr];    //Reading Rs1
+//        Rs2Data = (Rs2Addr == ADDR_ZERO) ? DATA_ZERO : RegArray[Rs2Addr];    //Reading Rs2
+//        RdData  = (RdAddr  == ADDR_ZERO) ? DATA_ZERO : RegArray[RdAddr];     //Reading Rd (for MAC)
+//    end
     
-    //Write Logic (Sequential)
-    always @(posedge CPU_clk) begin
-        if (RegWrite && RdAddr != 0) begin
-            RegArray[RdAddr] <= WriteData;      //all reset of registers is handled by software/bootcode
-        end
+always @(posedge CPU_clk or negedge CPU_rst_n) begin
+    if (!CPU_rst_n) begin
+        for (i=0; i<REG_COUNT; i=i+1)
+            RegArray[i] <= 0;
     end
+    else if (RegWrite && RdAddr != 0) begin
+        RegArray[RdAddr] <= WriteData;
+    end
+end
+
+
     
 endmodule

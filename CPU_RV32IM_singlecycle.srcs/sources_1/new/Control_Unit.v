@@ -20,7 +20,7 @@ module Control_Unit #(
     
     output reg [2:0]              ALUOp,
     output reg                    MDSel,
-    //output reg                    MACSel,
+    output reg                    MACSel,
     output reg [2:0]              ImmediateSrc,
     output reg [3:0]              TargetSel,
     output reg                    RegWrite,
@@ -38,8 +38,10 @@ module Control_Unit #(
     wire [14:0] Control_unused = {Instr_RV32IM[24:15], Instr_RV32IM[11:7]};    //to avoid linter violations
     
     always @(*) begin
+        MACSel = 1'b0;
+        MDSel = 1'b0;
         case (Opcode)
-        
+             
             `OPCODE_RTYPE:  begin            //R-type Instructions
             
                 case (funct7)
@@ -50,13 +52,14 @@ module Control_Unit #(
                     end
                     
                     7'b0000001: begin
-                        ALUOp = `ALUOP_RMUL;                            //RV32M
-                        MDSel = 1'b1;                                   //Initiates ALU_RV32M
+                            ALUOp = `ALUOP_RMUL; //RV32M
+                            MDSel = 1'b1; //Initiates ALU_RV32M
                     end
-                    
+                        
                     default:    begin
                         ALUOp = `ALUOP_NOP;                             //fallback
                         MDSel = 1'b0;
+                        MACSel = 1'b0;
                     end
                     
                 endcase
@@ -73,6 +76,26 @@ module Control_Unit #(
             end
             
             `OPCODE_ITYPE:  begin            //I-type Arithmetic and Logical Instructions
+                if (funct3 == 3'b010) begin
+                    // MACI
+                    ALUOp        = `ALUOP_RMUL;
+                    MDSel        = 1'b0;      // use MAC path, not pure MUL
+                    MACSel       = 1'b1;
+                
+                    ImmediateSrc = `IMM_I;
+                    TargetSel    = `TR_NOP;
+                
+                    RegWrite     = 1'b1;
+                    MemRead      = 1'b0;
+                    MemWrite     = 1'b0;
+                    MemToReg     = 2'b00;
+                    MemDataType  = `MEM_INVALID;
+                
+                    ALUSrc1      = 1'b0;
+                    ALUSrc2      = 1'b1;      // use immediate
+                end 
+                
+                else begin
                 ALUOp        = `ALUOP_ITYPE;
                 MDSel        = 1'b0;
                 ImmediateSrc = `IMM_I;
@@ -84,6 +107,7 @@ module Control_Unit #(
                 MemDataType  = `MEM_INVALID; 
                 ALUSrc1      = 1'b0;
                 ALUSrc2      = 1'b1;
+                end
             end
             
             `OPCODE_LOAD:   begin            //Load Instructions (I-type)
@@ -210,6 +234,30 @@ module Control_Unit #(
                 ALUSrc2      = 1'b1;            //Imm
             end
             
+            `OPCODE_MAC: begin
+                MACSel = 1'b1;
+                MDSel  = 1'b1;
+                ALUOp  = `ALUOP_RMUL;
+            
+                RegWrite = 1'b1;
+                MemRead  = 1'b0;
+                MemWrite = 1'b0;
+                MemToReg = 2'b00;
+                MemDataType = `MEM_INVALID;
+                TargetSel = `TR_NOP;
+            
+                if (funct3 == 3'b000) begin
+                    ImmediateSrc = `IMM_NONE;
+                    ALUSrc1 = 0;
+                    ALUSrc2 = 0;
+                end else begin
+                    ImmediateSrc = `IMM_I;
+                    ALUSrc1 = 0;
+                    ALUSrc2 = 1;
+                end
+            end 
+        
+        
             default:        begin            //Default fallback
                 ALUOp        = `ALUOP_NOP;
                 MDSel        = 1'b0;

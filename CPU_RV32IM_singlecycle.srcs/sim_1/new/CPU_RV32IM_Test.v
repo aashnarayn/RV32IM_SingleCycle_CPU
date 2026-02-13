@@ -29,6 +29,8 @@ module CPU_RV32IM_Test();
     reg                    CPU_PCWrite;
     reg                    CPU_clk;
     reg                    CPU_rst_n;
+    reg  [DATA_WIDTH-1:0]  MAC_ACC;
+
     
     //Main UUT Debug Outputs           
     wire [PC_WIDTH-1:0]    CPU_PC;
@@ -60,7 +62,7 @@ module CPU_RV32IM_Test();
         .PC_WIDTH(PC_WIDTH),
         .PC_STEP(PC_STEP),
         .INSTR_WIDTH(INSTR_WIDTH),
-        .wire_COUNT(REG_COUNT),
+        .REG_COUNT(REG_COUNT),
         .IMEM_DEPTH(IMEM_DEPTH),
         .DMEM_DEPTH(DMEM_DEPTH)
         )
@@ -119,10 +121,10 @@ module CPU_RV32IM_Test();
         CPU_clk   = 0;
         
     
-        CPU_rst_n = 1;
+        CPU_rst_n = 0;
        
         #60; ResetTime = ResetTime + 60;
-        CPU_rst_n = 0;  
+        CPU_rst_n = 1;  
         
         #(SIM_TIME - ResetTime);  
  
