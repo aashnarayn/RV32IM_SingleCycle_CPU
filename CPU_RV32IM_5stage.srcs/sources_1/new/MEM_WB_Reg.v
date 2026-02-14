@@ -40,7 +40,7 @@ module MEM_WB_reg #(
     output reg [$clog2(REG_COUNT)-1:0] WB_RdAddr        // Destination: Register_File (Write Addr with WB Propagation) & Hazard Unit
     );
 
-    always @(posedge CPU_clk) begin
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
         if (!CPU_rst_n) begin
             // Reset Control
             WB_RegWrite    <= 1'b0;

@@ -45,7 +45,7 @@ module ID_EX_reg #(
     // --- Split Instruction Fields (Input from Instruction Splitter) ---
     input  wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,     // Origin: Instruction Splitter
     input  wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,     // Origin: Instruction Splitter
-    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs3Addr,     // Origin: Instruction Splitter (Rs3 for MAC) (same as ID_RdAddr)
+    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs3Addr,     // Origin: Instruction Splitter
     input  wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,      // Origin: Instruction Splitter
     input  wire [2:0]                   ID_Funct3,      // Origin: Instruction Splitter
     input  wire [6:0]                   ID_Funct7,      // Origin: Instruction Splitter
@@ -86,8 +86,39 @@ module ID_EX_reg #(
     output reg [6:0]                   EX_Opcode        // Destination: ALUControl_Gen
     );
 
-    always @(posedge CPU_clk) begin
-        if (!CPU_rst_n || ID_EX_Flush) begin
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
+        if (!CPU_rst_n) begin
+            // Clear all Control Outputs
+            EX_ALUOp       <= 3'b0;
+            EX_MDSel       <= 1'b0;
+            EX_MACSel      <= 1'b0;
+            EX_TargetSel   <= 4'b0; 
+            EX_ALUSrc1     <= 1'b0;
+            EX_ALUSrc2     <= 1'b0;
+            EX_MemRead     <= 1'b0;
+            EX_MemWrite    <= 1'b0;
+            EX_MemDataType <= 3'b111; // MEM_INVALID
+            EX_RegWrite    <= 1'b0;
+            EX_MemToReg    <= 2'b00;
+            
+            // Clear all Data Outputs
+            EX_PC          <= 0;
+            EX_PC_Plus_4   <= 0;
+            EX_Rs1Data     <= 0;
+            EX_Rs2Data     <= 0;
+            EX_RdData      <= 0;
+            EX_Immediate   <= 0;
+            
+            // Clear all Address/Field Outputs
+            EX_Rs1Addr     <= 0;
+            EX_Rs2Addr     <= 0;
+            EX_Rs3Addr     <= 0;
+            EX_RdAddr      <= 0;
+            EX_Funct3      <= 3'b0;
+            EX_Funct7      <= 7'b0;
+            EX_Opcode      <= 7'b0;
+        end 
+        else if (ID_EX_Flush) begin      // Kept as separate case to infer asynchronous reset properly
             // Clear all Control Outputs
             EX_ALUOp       <= 3'b0;
             EX_MDSel       <= 1'b0;

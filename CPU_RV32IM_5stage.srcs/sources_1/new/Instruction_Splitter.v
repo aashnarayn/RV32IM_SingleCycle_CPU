@@ -23,7 +23,7 @@ module Instruction_Splitter #(
     // Register Addresses
     output wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,      // Destination: Register_File (RP1), Hazard Unit, Forwarding
     output wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,      // Destination: Register_File (RP2), Hazard Unit, Forwarding
-    output wire [$clog2(REG_COUNT)-1:0] ID_Rs3Addr,      // Destination: Register_File (RP3), Hazard Unit (For MAC)
+    output wire [$clog2(REG_COUNT)-1:0] ID_Rs3Addr,      // Destination: Register_File (RP3), Hazard Unit, Forwarding (MAC)
     output wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,       // Destination: ID/EX Reg (for WB propagation)
     
     // Control Fields

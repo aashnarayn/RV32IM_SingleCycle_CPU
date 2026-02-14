@@ -1,7 +1,7 @@
 /*
 * Module: Program_Counter.v
 * Description: Holds the address of the current instruction and updates it on
-* each clock cycle if PCWrite is asserted. Supports synchronous reset.
+* each clock cycle if PCWrite is asserted. Supports asynchronous reset.
 * Stage - IF
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
@@ -24,7 +24,7 @@ module Program_Counter #(
     localparam RESET_PC = 32'h80000000;     //PC Reset value before clock update
                                             //RISC-V convention - used for simulation
                                             //32'h00000000 is used for Bootrom style approaches
-    always @(posedge CPU_clk) begin
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
        if (!CPU_rst_n) begin
            IF_PC <= RESET_PC;      //ensures that on next PC update, PC is already 0 
        end else begin

@@ -23,7 +23,7 @@ module Data_Memory #(
     input  wire [2:0]       MEM_MemDataType, // Origin: EX_MEM_reg
     
     // --- Address & Data (Input from EX/MEM Pipeline Register) ---
-    input  wire [WIDTH-1:0] MEM_ALUResult,   // Origin: EX_MEM_reg (The Address)
+    input  wire [WIDTH-1:0] MEM_ALUResult,   // Origin: EX_MEM_reg (The Address) (only a part of this address size will be used)
     input  wire [WIDTH-1:0] MEM_WriteData,   // Origin: EX_MEM_reg (Store Data - Forwarded Rs2)
     
     // --- Output (To MEM/WB Pipeline Register) ---

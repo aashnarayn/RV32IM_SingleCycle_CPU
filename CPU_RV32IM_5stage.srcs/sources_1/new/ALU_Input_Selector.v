@@ -69,9 +69,9 @@ module ALU_Input_Selector #(
     // Data Inputs (Base Sources from ID/EX)
     input  wire [WIDTH-1:0]    EX_Rs1Data,      // Origin: ID/EX Pipeline Register
     input  wire [WIDTH-1:0]    EX_Rs2Data,      // Origin: ID/EX Pipeline Register
+    input  wire [WIDTH-1:0]    EX_RdData_MAC,   // Origin: ID/EX Pipeline Register (Rs3/Rd)
     input  wire [PC_WIDTH-1:0] EX_PC,           // Origin: ID/EX Pipeline Register
     input  wire [WIDTH-1:0]    EX_Imm,          // Origin: ID/EX Pipeline Register
-    input  wire [WIDTH-1:0]    EX_RdData,       // Origin: ID/EX Pipeline Register (Rs3/Rd)
     
     // Data Inputs (Forwarding Sources)
     input  wire [WIDTH-1:0]    MEM_ForwardData, // Origin: EX/MEM_reg (The ALU Result from previous instr)
@@ -82,7 +82,8 @@ module ALU_Input_Selector #(
     input  wire                EX_ALUSrc2,      // Origin: ID/EX Pipeline Register
     input  wire [1:0]          EX_ForwardA,     // Origin: Forwarding Unit
     input  wire [1:0]          EX_ForwardB,     // Origin: Forwarding Unit
-    
+    input  wire [1:0]          EX_ForwardC,     // Origin: Forwarding Unit 
+
     // Outputs to ALU & Memory
     output wire [WIDTH-1:0]    EX_Op1,          // Destination: ALU_RV32I / ALU_RV32M
     output wire [WIDTH-1:0]    EX_Op2,          // Destination: ALU_RV32I / ALU_RV32M
@@ -144,6 +145,6 @@ module ALU_Input_Selector #(
     assign EX_StoreData = Forwarded_Rs2; 
     
     // Passthrough for Accumulator
-    assign EX_Op3 = EX_RdData_MAC; 
+    assign EX_Op3 = Forwarded_Rs3;  // RdData protected from Stalls
     
 endmodule

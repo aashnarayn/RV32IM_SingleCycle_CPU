@@ -1,7 +1,9 @@
 /*
 * Module: Forwarding_Unit.v
 * Description: Detects data hazards for Rs1, Rs2, and the MAC Accumulator (Rs3)
-* in the Execute stage to bypass the register file.
+* in the Execute stage to bypass the register file. Does not allow forwarding 
+* if the Instruction in Execute Stage is a Branch instruction of any kind. 
+* This approach optimises timing by introducing a pipeline stall in this case.
 * Controls three forwarding muxes to handle EX-to-EX and MEM-to-EX forwarding.
 * Stage: EX
 * Author: Aashrith S Narayn
@@ -26,6 +28,7 @@ module Forwarding_Unit #(
     input  wire [$clog2(REG_COUNT)-1:0] EX_Rs2Addr,   // Origin: ID/EX Reg
     input  wire [$clog2(REG_COUNT)-1:0] EX_Rs3Addr,   // Origin: ID/EX Reg (Accumulator Address)
     input  wire                         EX_MACSel,    // Origin: ID/EX Reg (Is current instruction MAC?)
+    input  wire [6:0]                   EX_Opcode,    // Origin: ID/EX Reg (To check if EX instruction is a Branch)
     
     // Inputs from EX/MEM Pipeline Register (Forwarding from MEM stage)
     input  wire                         MEM_RegWrite, // Origin: EX/MEM Reg
@@ -47,45 +50,53 @@ module Forwarding_Unit #(
         EX_ForwardB = `FWD_NO_FORWARD;
         EX_ForwardC = `FWD_NO_FORWARD;
         
-        // =========================================================
-        // 1. EX HAZARD (Forward from MEM Stage) - Priority 1
-        // =========================================================
-        
-        // Rs1 Forwarding
-        if (MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs1Addr)) begin
-            EX_ForwardA = `FWD_FROM_MEM;
-        end
-        
-        // Rs2 Forwarding
-        if (MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs2Addr)) begin
-            EX_ForwardB = `FWD_FROM_MEM;
-        end
 
-        // Rs3 (Accumulator) Forwarding
-        if (EX_MACSel && MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs3Addr)) begin
-            EX_ForwardC = `FWD_FROM_MEM;
-        end
-        
-        // =========================================================
-        // 2. MEM HAZARD (Forward from WB Stage) - Priority 2
-        // =========================================================
-        
-        // Rs1 Forwarding
-        if (WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs1Addr) && 
-           !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs1Addr))) begin
-            EX_ForwardA = `FWD_FROM_WB;
-        end
-        
-        // Rs2 Forwarding
-        if (WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs2Addr) && 
-           !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs2Addr))) begin
-            EX_ForwardB = `FWD_FROM_WB;
-        end
+        // CRITICAL TIMING FIX: 
+        // If the instruction in EX is a Branch, we FORBID forwarding.
+        // The Hazard Unit has already guaranteed that the correct data 
+        // is in the Register File (via Stalls), so we don't need to forward.
+        if (EX_Opcode != `OPCODE_BRANCH) begin
 
-        // Rs3 (Accumulator) Forwarding
-        if (EX_MACSel && WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs3Addr) && 
-           !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs3Addr))) begin
-            EX_ForwardC = `FWD_FROM_WB;
+            // =========================================================
+            // 1. EX HAZARD (Forward from MEM Stage) - Priority 1
+            // =========================================================
+            
+            // Rs1 Forwarding
+            if (MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs1Addr)) begin
+                EX_ForwardA = `FWD_FROM_MEM;
+            end
+            
+            // Rs2 Forwarding
+            if (MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs2Addr)) begin
+                EX_ForwardB = `FWD_FROM_MEM;
+            end
+
+            // Rs3 (Accumulator) Forwarding
+            if (EX_MACSel && MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs3Addr)) begin
+                EX_ForwardC = `FWD_FROM_MEM;
+            end
+            
+            // =========================================================
+            // 2. MEM HAZARD (Forward from WB Stage) - Priority 2
+            // =========================================================
+            
+            // Rs1 Forwarding
+            if (WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs1Addr) && 
+            !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs1Addr))) begin
+                EX_ForwardA = `FWD_FROM_WB;
+            end
+            
+            // Rs2 Forwarding
+            if (WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs2Addr) && 
+            !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs2Addr))) begin
+                EX_ForwardB = `FWD_FROM_WB;
+            end
+
+            // Rs3 (Accumulator) Forwarding
+            if (EX_MACSel && WB_RegWrite && (WB_RdAddr != 0) && (WB_RdAddr == EX_Rs3Addr) && 
+            !(MEM_RegWrite && (MEM_RdAddr != 0) && (MEM_RdAddr == EX_Rs3Addr))) begin
+                EX_ForwardC = `FWD_FROM_WB;
+            end
         end
     end
 

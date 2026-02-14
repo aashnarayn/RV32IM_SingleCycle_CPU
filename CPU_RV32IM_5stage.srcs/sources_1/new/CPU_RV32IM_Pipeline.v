@@ -42,6 +42,7 @@ module CPU_RV32IM_Pipeline #(
     // --- Control Signals (From ID Stage - Decode Verification) ---
     output wire [2:0]             CPU_ALUOp,
     output wire                   CPU_MDSel,
+    output wire                   CPU_MacSel,
     output wire [2:0]             CPU_ImmediateSrc,
     output wire [2:0]             CPU_TargetSel,
     output wire                   CPU_RegWrite,
@@ -61,15 +62,28 @@ module CPU_RV32IM_Pipeline #(
     
     // Hazard & Stall Debug
     output wire                   CPU_Stall_Divider,   // Is the Divider FSM freezing the pipe?
-    output wire                   CPU_Stall_FrontEnd,  // Is the Hazard Unit stopping PC/Fetch?
+    output wire                   CPU_Stalled,         // Is the Hazard Unit stopping PC/Fetch?
     output wire                   CPU_Flush_Event,     // Are we flushing due to branch/jump?
     
     // Forwarding Debug
-    output wire [1:0]             CPU_FwdC_Sel,        // Critical: Are we forwarding the Accumulator?
-    
-    output wire TIMING_CHECK_LED
+    output wire [1:0]             CPU_FwdC_Sel         // Critical: Are we forwarding the Accumulator?
     );
     
+    
+    
+    // ===========================================================================
+    // 0. Reset Synchronization
+    // ===========================================================================
+    
+    wire CPU_sync_rst_n; // Use THIS wire for all 24 modules below
+    
+    Reset_Synchronizer CPU_RstSync (
+        .CPU_clk(CPU_clk),
+        .CPU_rst_n(CPU_rst_n),      // Connect to the raw input port
+        .CPU_sync_rst_n(CPU_sync_rst_n) // Connect to the internal wire
+    );
+
+
 
     // ===========================================================================
     // Internal Wires (Grouped by Stage)
@@ -78,11 +92,11 @@ module CPU_RV32IM_Pipeline #(
     // ---------------------------------------------------------------------------
     // IF Stage Signals
     // ---------------------------------------------------------------------------
-    (* keep = "true" *) wire [PC_WIDTH-1:0]    PC_Next;       // Origin: PC_Next_Mux         -> Destination: Program_Counter
-    (* keep = "true" *) wire [PC_WIDTH-1:0]    PC_Current;    // Origin: Program_Counter     -> Destination: Instruction_Memory, PC_Incrementer, IF/ID_Reg
-    (* keep = "true" *) wire [PC_WIDTH-1:0]    PC_Plus_4_IF;  // Origin: PC_Incrementer      -> Destination: PC_Next_Mux, IF/ID_Reg
-    (* keep = "true" *) wire [INSTR_WIDTH-1:0] Instr_IF;      // Origin: Instruction_Memory  -> Destination: IF/ID_Reg
-    (* keep = "true" *) wire                   PC_Write;      // Origin: Hazard_Detection_Unit -> Destination: Program_Counter (Enable)
+    (* keep = "true" *) wire [PC_WIDTH-1:0]    IF_PC_Next;      // Origin: PC_Next_Mux         -> Destination: Program_Counter
+    (* keep = "true" *) wire [PC_WIDTH-1:0]    IF_PC_Current;   // Origin: Program_Counter     -> Destination: Instruction_Memory, PC_Incrementer, IF/ID_Reg
+    (* keep = "true" *) wire [PC_WIDTH-1:0]    IF_PC_Plus_4;    // Origin: PC_Incrementer      -> Destination: PC_Next_Mux, IF/ID_Reg
+    (* keep = "true" *) wire [INSTR_WIDTH-1:0] IF_Instr;        // Origin: Instruction_Memory  -> Destination: IF/ID_Reg
+    (* keep = "true" *) wire                   IF_PCWrite;      // Origin: Hazard_Detection_Unit -> Destination: Program_Counter (Enable)
     
     // ---------------------------------------------------------------------------
     // IF/ID Pipeline Register Outputs (Wires emerging in ID Stage)
@@ -95,12 +109,14 @@ module CPU_RV32IM_Pipeline #(
     // ID Stage Signals
     // ---------------------------------------------------------------------------
     // Splitter Outputs
-    (* keep = "true" *) wire [6:0]             ID_Opcode;        // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
-    (* keep = "true" *) wire [6:0]             ID_Funct7;        // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
-    (* keep = "true" *) wire [2:0]             ID_Funct3;        // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
-    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr; // Origin: Instruction_Splitter -> Destination: Register_File, Hazard_Unit, ID/EX_Reg
-    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr; // Origin: Instruction_Splitter -> Destination: Register_File, Hazard_Unit, ID/EX_Reg
-    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_RdAddr;  // Origin: Instruction_Splitter -> Destination: Register_File(Port3), Hazard_Unit, ID/EX_Reg
+    (* keep = "true" *) wire [INSTR_WIDTH-1:0]       ID_Instr_Out;  // Origin: Instruction Splitter -> Destination: Imm_Gen (only)
+    (* keep = "true" *) wire [6:0]                   ID_Opcode;     // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
+    (* keep = "true" *) wire [6:0]                   ID_Funct7;     // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
+    (* keep = "true" *) wire [2:0]                   ID_Funct3;     // Origin: Instruction_Splitter -> Destination: Control_Unit, ID/EX_Reg
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr;    // Origin: Instruction_Splitter -> Destination: Register_File, Hazard_Unit, ID/EX_Reg, Forwarding Unit
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr;    // Origin: Instruction_Splitter -> Destination: Register_File, Hazard_Unit, ID/EX_Reg, Forwarding Unit
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_Rs3Addr;    // Origin: Instruction_Splitter -> Destination: Register_File(Port3), Hazard_Unit, Forwarding Unit, ID/EX_Reg
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] ID_RdAddr;     // Origin: Instruction_Splitter -> Destination: ID/EX_Reg (WB Propagation) (same as ID_Rs3Addr)
     
     // Control Unit Outputs
     (* keep = "true" *) wire [2:0]             ID_ALUOp;        // Origin: Control_Unit -> Destination: ID/EX_Reg
@@ -119,7 +135,7 @@ module CPU_RV32IM_Pipeline #(
     // Data Path (Operands)
     (* keep = "true" *) wire [DATA_WIDTH-1:0]  ID_Rs1Data;      // Origin: Register_File (Port 1) -> Destination: ID/EX_Reg
     (* keep = "true" *) wire [DATA_WIDTH-1:0]  ID_Rs2Data;      // Origin: Register_File (Port 2) -> Destination: ID/EX_Reg
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  ID_Rs3Data;      // Origin: Register_File (Port 3) -> Destination: ID/EX_Reg (Accumulator Value)
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]  ID_RdData;       // Origin: Register_File (Port 3) -> Destination: ID/EX_Reg (Accumulator Value)
     (* keep = "true" *) wire [DATA_WIDTH-1:0]  ID_Immediate;    // Origin: Imm_Gen                -> Destination: ID/EX_Reg
     
     // Hazard Unit Outputs
@@ -149,7 +165,7 @@ module CPU_RV32IM_Pipeline #(
     (* keep = "true" *)wire [PC_WIDTH-1:0]    EX_PC_Plus_4;    // Origin: ID/EX_Reg -> Destination: Jump_Target_Gen, EX/MEM_Reg
     (* keep = "true" *)wire [DATA_WIDTH-1:0]  EX_Rs1Data;      // Origin: ID/EX_Reg -> Destination: ALU_Input_Selector (via Forwarding Logic)
     (* keep = "true" *)wire [DATA_WIDTH-1:0]  EX_Rs2Data;      // Origin: ID/EX_Reg -> Destination: ALU_Input_Selector (via Forwarding Logic)
-    (* keep = "true" *)wire [DATA_WIDTH-1:0]  EX_Rs3Data;      // Origin: ID/EX_Reg -> Destination: ALU_Input_Selector (via Forwarding Logic)
+    (* keep = "true" *)wire [DATA_WIDTH-1:0]  EX_RdData;       // Origin: ID/EX_Reg -> Destination: ALU_Input_Selector (via Forwarding Logic)
     (* keep = "true" *)wire [DATA_WIDTH-1:0]  EX_Immediate;    // Origin: ID/EX_Reg -> Destination: ALU_Input_Selector, Branch_Target_Gen
     
     // Split Fields
@@ -157,9 +173,9 @@ module CPU_RV32IM_Pipeline #(
     (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] EX_Rs2Addr; // Origin: ID/EX_Reg -> Destination: Forwarding_Unit
     (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] EX_Rs3Addr; // Origin: ID/EX_Reg -> Destination: Forwarding_Unit
     (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] EX_RdAddr;  // Origin: ID/EX_Reg -> Destination: EX/MEM_Reg, Hazard_Unit(Feedback)
-    (* keep = "true" *) wire [2:0]             EX_Funct3;        // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
-    (* keep = "true" *) wire [6:0]             EX_Funct7;        // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
-    (* keep = "true" *) wire [6:0]             EX_Opcode;        // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
+    (* keep = "true" *) wire [2:0]                   EX_Funct3;  // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
+    (* keep = "true" *) wire [6:0]                   EX_Funct7;  // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
+    (* keep = "true" *) wire [6:0]                   EX_Opcode;  // Origin: ID/EX_Reg -> Destination: ALUControl_Gen
     
     // ---------------------------------------------------------------------------
     // EX Stage Signals
@@ -193,15 +209,15 @@ module CPU_RV32IM_Pipeline #(
     // ---------------------------------------------------------------------------
     // EX/MEM Pipeline Register Outputs (Wires emerging in MEM Stage)
     // ---------------------------------------------------------------------------
-    (* keep = "true" *) wire                   MEM_MemRead;      // Origin: EX/MEM_Reg -> Destination: Data_Memory
-    (* keep = "true" *) wire                   MEM_MemWrite;     // Origin: EX/MEM_Reg -> Destination: Data_Memory
-    (* keep = "true" *) wire                   MEM_RegWrite;     // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg, Forwarding_Unit(Feedback)
-    (* keep = "true" *) wire [1:0]             MEM_MemToReg;     // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg
-    (* keep = "true" *) wire [2:0]             MEM_MemDataType;  // Origin: EX/MEM_Reg -> Destination: Data_Memory
-    (* keep = "true" *) wire [PC_WIDTH-1:0]    MEM_PC_Plus_4;    // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  MEM_ALUResult;    // Origin: EX/MEM_Reg -> Destination: Data_Memory(Address), MEM/WB_Reg, ALU_Input_Selector(Forwarding)
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  MEM_WriteData;    // Origin: EX/MEM_Reg -> Destination: Data_Memory(Data)
-    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] MEM_RdAddr; // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg, Forwarding_Unit(Feedback)
+    (* keep = "true" *) wire                         MEM_MemRead;      // Origin: EX/MEM_Reg -> Destination: Data_Memory
+    (* keep = "true" *) wire                         MEM_MemWrite;     // Origin: EX/MEM_Reg -> Destination: Data_Memory
+    (* keep = "true" *) wire                         MEM_RegWrite;     // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg, Forwarding_Unit(Feedback)
+    (* keep = "true" *) wire [1:0]                   MEM_MemToReg;     // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg
+    (* keep = "true" *) wire [2:0]                   MEM_MemDataType;  // Origin: EX/MEM_Reg -> Destination: Data_Memory
+    (* keep = "true" *) wire [PC_WIDTH-1:0]          MEM_PC_Plus_4;    // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]        MEM_ALUResult;    // Origin: EX/MEM_Reg -> Destination: Data_Memory(Address), MEM/WB_Reg, ALU_Input_Selector(Forwarding)
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]        MEM_WriteData;    // Origin: EX/MEM_Reg -> Destination: Data_Memory(Data)
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] MEM_RdAddr;       // Origin: EX/MEM_Reg -> Destination: MEM/WB_Reg, Forwarding_Unit(Feedback)
     
     // ---------------------------------------------------------------------------
     // MEM Stage Signals
@@ -211,12 +227,12 @@ module CPU_RV32IM_Pipeline #(
     // ---------------------------------------------------------------------------
     // MEM/WB Pipeline Register Outputs (Wires emerging in WB Stage)
     // ---------------------------------------------------------------------------
-    (* keep = "true" *) wire                   WB_RegWrite;     // Origin: MEM/WB_Reg -> Destination: Register_File, Forwarding_Unit(Feedback)
-    (* keep = "true" *) wire [1:0]             WB_MemToReg;     // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
-    (* keep = "true" *) wire [PC_WIDTH-1:0]    WB_PC_Plus_4;    // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  WB_ALUResult;    // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
-    (* keep = "true" *) wire [DATA_WIDTH-1:0]  WB_ReadData;     // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
-    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] WB_RdAddr; // Origin: MEM/WB_Reg -> Destination: Register_File, Forwarding_Unit(Feedback)
+    (* keep = "true" *) wire                         WB_RegWrite;     // Origin: MEM/WB_Reg -> Destination: Register_File, Forwarding_Unit(Feedback)
+    (* keep = "true" *) wire [1:0]                   WB_MemToReg;     // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
+    (* keep = "true" *) wire [PC_WIDTH-1:0]          WB_PC_Plus_4;    // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]        WB_ALUResult;    // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
+    (* keep = "true" *) wire [DATA_WIDTH-1:0]        WB_ReadData;     // Origin: MEM/WB_Reg -> Destination: WriteBack_Mux
+    (* keep = "true" *) wire [$clog2(REG_COUNT)-1:0] WB_RdAddr;       // Origin: MEM/WB_Reg -> Destination: Register_File, Forwarding_Unit(Feedback)
     
     // ---------------------------------------------------------------------------
     // WB Stage Signals
@@ -234,38 +250,38 @@ module CPU_RV32IM_Pipeline #(
     (* dont_touch = "true" *)
     Program_Counter #(.PC_WIDTH(PC_WIDTH), .PC_STEP(PC_STEP))
     CPU_ProgCount (
-        .IF_PC_Next(PC_Next_IF),
+        .IF_PC_Next(IF_PC_Next),
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
-        .IF_PCWrite(PC_Write),      // Controlled by Hazard Unit
-        .IF_PC(PC_Current)
+        .CPU_rst_n(CPU_sync_rst_n),
+        .IF_PCWrite(IF_PCWrite),      // Controlled by Hazard Unit
+        .IF_PC(IF_PC_Current)
     );
     
     // 2. Instruction Memory
     (* dont_touch = "true" *)
     Instruction_Memory #(.PC_WIDTH(PC_WIDTH), .INSTR_WIDTH(INSTR_WIDTH), .IMEM_DEPTH(IMEM_DEPTH))
     CPU_IMEM (
-        .PC(PC_Current),
-        .Instr_RV32IM(Instr_IF)
+        .IF_PC(IF_PC_Current),
+        .IF_Instr_RV32IM(IF_Instr)
     );
     
     // 3. PC Incrementer
     (* dont_touch = "true" *)
     PC_Incrementer #(.PC_WIDTH(PC_WIDTH), .PC_STEP(PC_STEP))
     CPU_PCAdd (
-        .PC(PC_Current),
-        .PC_Plus_4(PC_Plus_4_IF)
+        .IF_PC(IF_PC_Current),
+        .IF_PC_Plus_4(IF_PC_Plus_4)
     );
     
     // 4. Next PC Mux (Feedback from EX Stage)
     (* dont_touch = "true" *)
     PC_Next_Mux #(.PC_WIDTH(PC_WIDTH), .WIDTH(DATA_WIDTH))
     CPU_NextPCMux (
-        .IF_PC_Plus_4(PC_Plus_4_IF),
+        .IF_PC_Plus_4(IF_PC_Plus_4),
         .EX_BranchTarget(EX_BranchTarget),
         .EX_JumpTarget(EX_JumpTarget),
         .EX_PCSrc(EX_PCSrc),     // From Target Controller (EX)
-        .IF_PC_Next(PC_Next_IF)
+        .IF_PC_Next(IF_PC_Next)
     );
 
 
@@ -278,15 +294,15 @@ module CPU_RV32IM_Pipeline #(
     IF_ID_reg #(.WIDTH(INSTR_WIDTH), .PC_WIDTH(PC_WIDTH))
     CPU_IF_ID_Reg (
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
+        .CPU_rst_n(CPU_sync_rst_n),
         .IF_ID_Flush(IF_ID_Flush), // From Hazard Unit
         .IF_ID_Write(IF_ID_Write), // From Hazard Unit
-        .IF_PC(PC_Current),
-        .IF_PC_Plus_4(PC_Plus_4_IF),
-        .IF_Instruction(Instr_IF),
+        .IF_PC(IF_PC_Current),
+        .IF_PC_Plus_4(IF_PC_Plus_4),
+        .IF_Instr(IF_Instr),
         .ID_PC(ID_PC),
         .ID_PC_Plus_4(ID_PC_Plus_4),
-        .ID_Instruction(ID_Instr)
+        .ID_Instr(ID_Instr)
     );
 
 
@@ -297,15 +313,17 @@ module CPU_RV32IM_Pipeline #(
 
     // 5. Instruction Splitter
     (* dont_touch = "true" *)
-    Instruction_Splitter #(.WIDTH(INSTR_WIDTH), .REG_COUNT(REG_COUNT))
+    Instruction_Splitter #(.INSTR_WIDTH(INSTR_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_Splitter (
-        .ID_Instruction(ID_Instr),
-        .ID_Opcode(ID_Opcode),
+        .ID_Instr_RV32IM(ID_Instr),
+        .ID_Instr_Out(ID_Instr_Out),
         .ID_RdAddr(ID_RdAddr),
-        .ID_Funct3(ID_Funct3),
         .ID_Rs1Addr(ID_Rs1Addr),
         .ID_Rs2Addr(ID_Rs2Addr),
-        .ID_Funct7(ID_Funct7)
+        .ID_Rs3Addr(ID_Rs3Addr),
+        .ID_Funct7(ID_Funct7),
+        .ID_Funct3(ID_Funct3),
+        .ID_Opcode(ID_Opcode)
     );
 
     // 6. Hazard Detection Unit
@@ -314,13 +332,17 @@ module CPU_RV32IM_Pipeline #(
     CPU_HazardUnit (
         .ID_Rs1Addr(ID_Rs1Addr),
         .ID_Rs2Addr(ID_Rs2Addr),
-        .ID_Rs3Addr(ID_RdAddr),    // Accumulator Source is Rd
-        .ID_MACSel(ID_MACSel),     // Check if current is MAC
-        .EX_MemRead(EX_MemRead),   // Check Load-Use
-        .EX_RdAddr(EX_RdAddr),     
-        .EX_PCSrc(EX_PCSrc),       // Check Control Hazard
-        .EX_ALU_Stall(EX_Stall_M), // Check Divider Stall
-        .PC_Write(PC_Write),
+        .ID_Rs3Addr(ID_Rs3Addr),        // Accumulator Source is Rd
+        .ID_MACSel(ID_MACSel),          // Check if current is MAC
+        .ID_Opcode(ID_Opcode),          // To address Branch Forwarding Resolution
+        .EX_MemRead(EX_MemRead),        // Check Load-Use
+        .EX_RdAddr(EX_RdAddr),          // CHeck dest. reg of EX instr
+        .EX_RegWrite(EX_RegWrite),      // Check if EX Instr writes to Reg
+        .EX_PCSrc(EX_PCSrc),            // Check Control Hazard
+        .EX_ALU_Stall(EX_Stall_M),      // Check Divider Stall
+        .MEM_RegWrite(MEM_RegWrite),    // Check if MEM Instr writes to Reg
+        .MEM_RdAddr(MEM_RdAddr),        // To check MEM dependency
+        .PCWrite(IF_PCWrite),
         .IF_ID_Write(IF_ID_Write),
         .ID_EX_Write(ID_EX_Write),
         .IF_ID_Flush(IF_ID_Flush),
@@ -332,23 +354,22 @@ module CPU_RV32IM_Pipeline #(
     Register_File #(.WIDTH(DATA_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_RegFile (
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
-        .RegWrite(WB_RegWrite),    // From WB Stage
-        .WriteAddr(WB_RdAddr),     // From WB Stage
-        .WriteData(WB_FinalWriteData), // From WB Stage
-        .ReadAddr1(ID_Rs1Addr),
-        .ReadAddr2(ID_Rs2Addr),
-        .ReadAddr3(ID_RdAddr),     // Port 3: Read Accumulator
-        .ReadData1(ID_Rs1Data),
-        .ReadData2(ID_Rs2Data),
-        .ReadData3(ID_Rs3Data)     // Accumulator Value
+        .WB_RegWrite(WB_RegWrite),        // From WB Stage
+        .WB_RdAddr(WB_RdAddr),         // From WB Stage
+        .WB_WriteData(WB_FinalWriteData), // From WB Stage
+        .ID_Rs1Addr(ID_Rs1Addr),
+        .ID_Rs2Addr(ID_Rs2Addr),
+        .ID_RdAddr(ID_Rs3Addr),         // Port 3: Read Accumulator
+        .ID_Rs1Data(ID_Rs1Data),
+        .ID_Rs2Data(ID_Rs2Data),
+        .ID_RdData(ID_RdData)          // Accumulator Value
     );
 
     // 8. Immediate Generator
     (* dont_touch = "true" *)
     Imm_Gen #(.WIDTH(DATA_WIDTH), .INSTR_WIDTH(INSTR_WIDTH))
     CPU_ImmGen (
-        .ID_Instruction(ID_Instr),
+        .ID_Instr_RV32IM(ID_Instr_Out),
         .ID_ImmediateSrc(ID_ImmediateSrc),
         .ID_Immediate(ID_Immediate)
     );
@@ -384,7 +405,7 @@ module CPU_RV32IM_Pipeline #(
     ID_EX_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_ID_EX_Reg (
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
+        .CPU_rst_n(CPU_sync_rst_n),
         .ID_EX_Flush(ID_EX_Flush),
         .ID_EX_Write(ID_EX_Write),
         // Inputs
@@ -393,8 +414,8 @@ module CPU_RV32IM_Pipeline #(
         .ID_MemRead(ID_MemRead), .ID_MemWrite(ID_MemWrite), .ID_MemDataType(ID_MemDataType),
         .ID_RegWrite(ID_RegWrite), .ID_MemToReg(ID_MemToReg),
         .ID_PC(ID_PC), .ID_PC_Plus_4(ID_PC_Plus_4),
-        .ID_Rs1Data(ID_Rs1Data), .ID_Rs2Data(ID_Rs2Data), .ID_RdData(ID_Rs3Data), .ID_Immediate(ID_Immediate),
-        .ID_Rs1Addr(ID_Rs1Addr), .ID_Rs2Addr(ID_Rs2Addr), .ID_Rs3Addr(ID_RdAddr), .ID_RdAddr(ID_RdAddr),
+        .ID_Rs1Data(ID_Rs1Data), .ID_Rs2Data(ID_Rs2Data), .ID_RdData(ID_RdData), .ID_Immediate(ID_Immediate),
+        .ID_Rs1Addr(ID_Rs1Addr), .ID_Rs2Addr(ID_Rs2Addr), .ID_Rs3Addr(ID_Rs3Addr), .ID_RdAddr(ID_RdAddr),
         .ID_Funct3(ID_Funct3), .ID_Funct7(ID_Funct7), .ID_Opcode(ID_Opcode),
         // Outputs
         .EX_ALUOp(EX_ALUOp), .EX_MDSel(EX_MDSel), .EX_MACSel(EX_MACSel),
@@ -402,7 +423,7 @@ module CPU_RV32IM_Pipeline #(
         .EX_MemRead(EX_MemRead), .EX_MemWrite(EX_MemWrite), .EX_MemDataType(EX_MemDataType),
         .EX_RegWrite(EX_RegWrite), .EX_MemToReg(EX_MemToReg),
         .EX_PC(EX_PC), .EX_PC_Plus_4(EX_PC_Plus_4),
-        .EX_Rs1Data(EX_Rs1Data), .EX_Rs2Data(EX_Rs2Data), .EX_RdData(EX_Rs3Data), .EX_Immediate(EX_Immediate),
+        .EX_Rs1Data(EX_Rs1Data), .EX_Rs2Data(EX_Rs2Data), .EX_RdData(EX_RdData), .EX_Immediate(EX_Immediate),
         .EX_Rs1Addr(EX_Rs1Addr), .EX_Rs2Addr(EX_Rs2Addr), .EX_Rs3Addr(EX_Rs3Addr), .EX_RdAddr(EX_RdAddr),
         .EX_Funct3(EX_Funct3), .EX_Funct7(EX_Funct7), .EX_Opcode(EX_Opcode)
     );
@@ -415,8 +436,7 @@ module CPU_RV32IM_Pipeline #(
 
     // 10. ALU Control Generator
     (* dont_touch = "true" *)
-    ALUControl_Gen 
-    CPU_ALUCtrlGen (
+    ALUControl_Gen CPU_ALUCtrlGen (
         .EX_ALUOp(EX_ALUOp),
         .EX_MACSel(EX_MACSel),
         .EX_Funct3(EX_Funct3),
@@ -433,6 +453,7 @@ module CPU_RV32IM_Pipeline #(
         .EX_Rs2Addr(EX_Rs2Addr),
         .EX_Rs3Addr(EX_Rs3Addr),
         .EX_MACSel(EX_MACSel),
+        .EX_Opcode(EX_Opcode),       // To check for Branch
         .MEM_RegWrite(MEM_RegWrite), // From EX/MEM
         .MEM_RdAddr(MEM_RdAddr),     // From EX/MEM
         .WB_RegWrite(WB_RegWrite),   // From MEM/WB
@@ -448,9 +469,9 @@ module CPU_RV32IM_Pipeline #(
     CPU_ALUInputSel (
         .EX_Rs1Data(EX_Rs1Data),
         .EX_Rs2Data(EX_Rs2Data),
+        .EX_RdData_MAC(EX_RdData),
         .EX_PC(EX_PC),
         .EX_Imm(EX_Immediate),
-        .EX_RdData_MAC(EX_Rs3Data),
         .MEM_ForwardData(MEM_ALUResult),     // Forward from MEM
         .WB_ForwardData(WB_FinalWriteData),  // Forward from WB
         .EX_ALUSrc1(EX_ALUSrc1),
@@ -460,8 +481,8 @@ module CPU_RV32IM_Pipeline #(
         .EX_ForwardC(EX_ForwardC),
         .EX_Op1(EX_Op1),
         .EX_Op2(EX_Op2),
-        .EX_Op3(EX_Op3),      // Forwarded Accumulator
-        .EX_StoreData(EX_StoreData) // Forwarded Store Data
+        .EX_Op3(EX_Op3),                     // Forwarded Accumulator
+        .EX_StoreData(EX_StoreData)          // Forwarded Store Data
     );
 
     // 13. ALU RV32I
@@ -481,7 +502,7 @@ module CPU_RV32IM_Pipeline #(
     ALU_RV32M #(.WIDTH(DATA_WIDTH))
     CPU_ALU_M (
         .clk(CPU_clk),
-        .rst_n(CPU_rst_n),
+        .rst_n(CPU_sync_rst_n),
         .EX_Op1(EX_Op1),
         .EX_Op2(EX_Op2),
         .EX_ALUControl(EX_ALUControl),
@@ -495,8 +516,8 @@ module CPU_RV32IM_Pipeline #(
     (* dont_touch = "true" *)
     Accumulator #(.WIDTH(DATA_WIDTH))
     CPU_Accumulator (
-        .Product(Result_M),
-        .Accumulator_Val(EX_Op3),
+        .EX_ALUResult_M(Result_M),
+        .EX_RdData(EX_Op3),
         .MAC_Result(MACResult)
     );
 
@@ -553,13 +574,13 @@ module CPU_RV32IM_Pipeline #(
     EX_MEM_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_EX_MEM_Reg (
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
+        .CPU_rst_n(CPU_sync_rst_n),
         // Inputs
         .EX_MemRead(EX_MemRead), .EX_MemWrite(EX_MemWrite), .EX_MemDataType(EX_MemDataType),
         .EX_RegWrite(EX_RegWrite), .EX_MemToReg(EX_MemToReg),
         .EX_PC_Plus_4(EX_PC_Plus_4),
         .EX_ALUResult(EX_ALUResult),
-        .EX_Rs2Data(EX_StoreData), // Forwarded store data
+        .EX_Rs2Data(EX_StoreData), // Forwarded Store data
         .EX_RdAddr(EX_RdAddr),
         // Outputs
         .MEM_MemRead(MEM_MemRead), .MEM_MemWrite(MEM_MemWrite), .MEM_MemDataType(MEM_MemDataType),
@@ -599,7 +620,7 @@ module CPU_RV32IM_Pipeline #(
     MEM_WB_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_MEM_WB_Reg (
         .CPU_clk(CPU_clk),
-        .CPU_rst_n(CPU_rst_n),
+        .CPU_rst_n(CPU_sync_rst_n),
         // Inputs
         .MEM_RegWrite(MEM_RegWrite), .MEM_MemToReg(MEM_MemToReg),
         .MEM_PC_Plus_4(MEM_PC_Plus_4),
@@ -636,8 +657,8 @@ module CPU_RV32IM_Pipeline #(
     // ===========================================================================
     
     // --- Data Path States ---
-    assign CPU_PC            = PC_Current;      // IF Stage: What are we fetching now?
-    assign CPU_Instr_RV32IM  = ID_Instr;        // ID Stage: What are we decoding?
+    assign CPU_PC            = IF_PC_Current;   // IF Stage: What are we fetching now?
+    assign CPU_Instr_RV32IM  = ID_Instr_Out;    // ID Stage: What are we decoding?
     assign CPU_Immediate     = ID_Immediate;    // ID Stage: What is the immediate?
     
     assign CPU_ALUResult     = EX_ALUResult;    // EX Stage: What did we just calculate?
@@ -650,6 +671,7 @@ module CPU_RV32IM_Pipeline #(
     // --- Control Signals (Visualizing the Control Unit in ID) ---
     assign CPU_ALUOp         = ID_ALUOp;
     assign CPU_MDSel         = ID_MDSel;
+    assign CPU_MacSel        = ID_MACSel;
     assign CPU_ImmediateSrc  = ID_ImmediateSrc;
     assign CPU_TargetSel     = ID_TargetSel;
     assign CPU_RegWrite      = ID_RegWrite;
@@ -659,23 +681,60 @@ module CPU_RV32IM_Pipeline #(
     assign CPU_MemDataType   = ID_MemDataType;
     assign CPU_ALUSrc1       = ID_ALUSrc1;
     assign CPU_ALUSrc2       = ID_ALUSrc2;
-    
-    // Exception: PCSrc is calculated in EX, not ID
-    assign CPU_PCSrc         = EX_PCSrc;  
+    assign CPU_PCSrc         = EX_PCSrc;        // Exception: PCSrc is calculated in EX, not ID
 
     // MAC Debug: Verify the 3rd Operand path
-    assign CPU_MAC_Accumulator = EX_Op3;      // Verify this matches the previous instruction's result!
+    assign CPU_MAC_Accumulator = EX_Op3;        // Verify this matches the previous instruction's result!
     assign CPU_MAC_Active      = EX_MACSel;
     
     // Stall Debug: Differentiate between "Load-Use" and "Divider" stalls
-    assign CPU_Stall_Divider   = EX_Stall_M;  // High during multi-cycle divide
-    assign CPU_Stall_FrontEnd  = ~PC_Write;   // High if PC is frozen for ANY reason
-    assign CPU_Flush_Event     = ID_EX_Flush; // High if we are killing the EX instruction
+    assign CPU_Stall_Divider   = EX_Stall_M;    // High during multi-cycle divide
+    assign CPU_Stalled         = ~IF_PCWrite;   // High if PC is frozen for ANY reason
+    assign CPU_Flush_Event     = ID_EX_Flush;   // High if we are killing the EX instruction
     
     // Forwarding Debug: Verify Rs3 (Accumulator) forwarding logic
-    assign CPU_FwdC_Sel        = EX_ForwardC; // Should be non-zero during back-to-back MACs
-    
-    // Timing Check
-    assign TIMING_CHECK_LED  = ^EX_ALUResult ^ ^MEM_ReadData ^ ^WB_FinalWriteData;
+    assign CPU_FwdC_Sel        = EX_ForwardC;   // Should be non-zero during back-to-back MACs
 
 endmodule  
+
+
+
+
+// * Reset Synchronizer module instantiated in the same top-level wrapper file
+/*
+* Module: Reset_Synchronizer
+* Description: Two-stage Flip-Flop Synchronizer for Active-Low Reset.
+* - Assertion: Immediate (Asynchronous) - Instantly resets the system.
+* - De-assertion: Synchronous - Releases reset only on a safe clock edge.
+* Prevents metastability and ensures all CPU modules wake up in the same cycle.
+* Author: Aashrith S Narayn
+*/
+
+`timescale 1ns / 1ps
+
+(* dont_touch = "true" *)
+module Reset_Synchronizer (
+    input  wire CPU_clk,          // System Clock
+    input  wire CPU_rst_n,        // Raw External Reset Button (Asynchronous)
+    output reg  CPU_sync_rst_n    // Clean Synchronized Reset (Use this everywhere!)
+    );
+
+    // Internal register for the first stage of the synchronizer
+    // (* ASYNC_REG = "TRUE" *) // Optional: Xilinx attribute to prevent optimization
+    reg rst_stage_1;
+
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
+        if (!CPU_rst_n) begin
+            // 1. Assert Immediately (Asynchronously)
+            // When button is pressed, output drops to 0 instantly.
+            rst_stage_1    <= 1'b0;
+            CPU_sync_rst_n <= 1'b0;
+        end else begin
+            // 2. De-assert Synchronously (Wait for Clock)
+            // When button is released, signal travels through 2 FFs.
+            rst_stage_1    <= 1'b1;
+            CPU_sync_rst_n <= rst_stage_1;
+        end
+    end
+
+endmodule

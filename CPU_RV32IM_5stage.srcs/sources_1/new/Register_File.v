@@ -17,7 +17,6 @@ module Register_File #(
     parameter REG_COUNT  = 32
     )(
     input  wire                         CPU_clk,
-    input  wire                         CPU_rst_n,
     
     // Write Port (Signals MUST come from the WB Pipeline Register)
     input  wire                         WB_RegWrite,  // Origin: MEM/WB Pipeline Register (Control Bundle)

@@ -36,7 +36,7 @@ module IF_ID_reg #(
     // RISC-V NOP: addi x0, x0, 0
     localparam NOP_INSTR = 32'h00000013; 
 
-    always @(posedge CPU_clk) begin
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
         if (!CPU_rst_n) begin
             ID_PC        <= 32'b0;
             ID_PC_Plus_4 <= 32'b0;

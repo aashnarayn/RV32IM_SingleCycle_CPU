@@ -45,7 +45,7 @@ module ALU_RV32M #(parameter WIDTH = 32)(
 
     wire signed [WIDTH:0] op1_33 = {op1_signed_mul & EX_Op1[WIDTH-1], EX_Op1};
     wire signed [WIDTH:0] op2_33 = {op2_signed_mul & EX_Op2[WIDTH-1], EX_Op2};
-    wire signed [2*WIDTH+1:0] product_full = op1_33 * op2_33;
+    wire signed [2*WIDTH-1:0] product_full = op1_33 * op2_33;
 
 
     // ========================================================================

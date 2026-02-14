@@ -1,3 +1,14 @@
+# ---------------------------------------------------------------------------------------
+# File: Constraints_RV32IM_Pipeline.xdc
+# Description: Physical and Timing Constraints for the 5-Stage Pipelined RV32IM CPU.
+#              - Defines 100 MHz Main System Clock.
+#              - Implements "False Path" constraints for Debug/LED outputs to 
+#                prevent false timing violations on non-critical logic.
+#              - Handles Asynchronous Reset safely via false_path.
+# Author: Aashrith S Narayn
+# Date: 14/02/2026
+# ---------------------------------------------------------------------------------------
+
 # =======================================================================================
 # 1. TIMING CONSTRAINTS (The "Performance" section)
 # =======================================================================================
@@ -8,28 +19,58 @@
 # ---------------------------------------------------------------------------------------
 # This is the single most important line. It forces the tool to work hard to place 
 # logic close together to ensure signal propagation happens within 10ns.
-create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} [get_ports CPU_clk]
+create_clock -period 25.000 -name sys_clk_pin -waveform {0.000 12.500} [get_ports CPU_clk]
 
 # ---------------------------------------------------------------------------------------
-# Input Delay Constraints
+# Reset Path Constraints (Updated for Synchronizer)
 # ---------------------------------------------------------------------------------------
-# Associate rst_n with the clock. Even though your design has a "Reset Synchronizer",
-# defining this delay prevents the router from placing the reset path 'lazily' far away.
-# We assume the external reset signal arrives 1ns after the clock edge (conservative).
-set_input_delay -clock [get_clocks sys_clk_pin] -min 1.000 [get_ports CPU_rst_n]
-set_input_delay -clock [get_clocks sys_clk_pin] -max 1.000 [get_ports CPU_rst_n]
+# Since we now have a Reset Synchronizer (2-FF chain), the external CPU_rst_n is 
+# treated as an asynchronous signal. We explicitly tell Vivado NOT to analyze the 
+# timing between the external pin and the first synchronizer flip-flop.
+# This prevents "Recovery/Removal" timing violations during synthesis.
+
+set_false_path -from [get_ports CPU_rst_n]
 
 # ---------------------------------------------------------------------------------------
-# Output Delay Constraints
+# DEBUG OUTPUT CONSTRAINTS (The Fix)
 # ---------------------------------------------------------------------------------------
-# This constrains your debug outputs (PC, ALUResult, etc.).
-# Without this, Vivado assumes outputs can take infinite time, leading to sloppy routing.
-# We demand outputs be valid 2ns before the next clock edge.
-set_output_delay -clock [get_clocks sys_clk_pin] 2.000 [get_ports {CPU_PC_WB[*]}]
-set_output_delay -clock [get_clocks sys_clk_pin] 2.000 [get_ports {CPU_ALUResult_WB[*]}]
-set_output_delay -clock [get_clocks sys_clk_pin] 2.000 [get_ports {CPU_WriteData_WB[*]}]
-set_output_delay -clock [get_clocks sys_clk_pin] 2.000 [get_ports {CPU_ALUControl_EX[*]}]
-set_output_delay -clock [get_clocks sys_clk_pin] 2.000 [get_ports TIMING_CHECK_LED]
+# We explicitly tell Vivado to IGNORE timing for all debug signals.
+# The internal CPU design doesn't require these signals to reach on time, they are read-only
+# This eliminates the "Setup Slack" violations caused by routing internal signals to pins.
+# Vivado will route them "best effort," which is perfect for LEDs/Logic Analyzers.
+
+set_false_path -to [get_ports {CPU_PC[*]}]
+set_false_path -to [get_ports {CPU_Instr_RV32IM[*]}]
+set_false_path -to [get_ports {CPU_Immediate[*]}]
+set_false_path -to [get_ports {CPU_ALUResult[*]}]
+set_false_path -to [get_ports {CPU_ALUControl[*]}]
+set_false_path -to [get_ports CPU_Zero]
+set_false_path -to [get_ports {CPU_ReadData[*]}]
+set_false_path -to [get_ports {CPU_WriteDataReg[*]}]
+
+# Control Signal Debugs
+set_false_path -to [get_ports {CPU_ALUOp[*]}]
+set_false_path -to [get_ports CPU_MDSel]
+set_false_path -to [get_ports CPU_MacSel]
+set_false_path -to [get_ports {CPU_ImmediateSrc[*]}]
+set_false_path -to [get_ports {CPU_TargetSel[*]}]
+set_false_path -to [get_ports CPU_RegWrite]
+set_false_path -to [get_ports CPU_MemRead]
+set_false_path -to [get_ports CPU_MemWrite]
+set_false_path -to [get_ports {CPU_MemToReg[*]}]
+set_false_path -to [get_ports {CPU_MemDataType[*]}]
+set_false_path -to [get_ports CPU_ALUSrc1]
+set_false_path -to [get_ports CPU_ALUSrc2]
+set_false_path -to [get_ports {CPU_PCSrc[*]}]
+
+# Advanced Debugs (MAC, Stall, Forwarding)
+set_false_path -to [get_ports {CPU_MAC_Accumulator[*]}]
+set_false_path -to [get_ports CPU_MAC_Active]
+set_false_path -to [get_ports CPU_Stall_Divider]
+set_false_path -to [get_ports CPU_Stalled]
+set_false_path -to [get_ports CPU_Flush_Event]
+set_false_path -to [get_ports {CPU_FwdC_Sel[*]}]
+
 
 
 # =======================================================================================

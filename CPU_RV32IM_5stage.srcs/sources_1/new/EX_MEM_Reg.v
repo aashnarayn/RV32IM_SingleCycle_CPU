@@ -51,7 +51,7 @@ module EX_MEM_reg #(
     output reg [$clog2(REG_COUNT)-1:0] MEM_RdAddr       // Destination: MEM/WB_reg (WB Propagation) & Hazard Unit
     );
 
-    always @(posedge CPU_clk) begin
+    always @(posedge CPU_clk or negedge CPU_rst_n) begin
         if (!CPU_rst_n) begin
             // Reset Control
             MEM_MemRead     <= 1'b0;
