@@ -1,9 +1,8 @@
 /*
-* Module: ALU_RV32I.v
+* Module: EX_ALU_RV32I.v
 * Description: Performs combinational operations as required
 * by the RV32I instruction set and sends result.
-* Leaves RV32M instructions for ALU_RV32M.v
-* Stage: EX
+* Leaves RV32M instructions for EX_ALU_RV32M.v
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */
@@ -12,14 +11,12 @@
 `include "CPU_Control_Codes.vh"
 
 //NOTE: This ALU can be scaled from 32 bit to any instruction length using the parameter WIDTH
-//(* dont_touch = "true" *)
-module ALU_RV32I #(parameter WIDTH = 32)(       
-    input  wire signed [WIDTH-1:0] EX_Op1,          // Origin: ALU_Input_Selector (EX Stage)
-    input  wire signed [WIDTH-1:0] EX_Op2,          // Origin: ALU_Input_Selector (EX Stage)
-    input  wire        [5:0]       EX_ALUControl,   // Origin: ALUControl_Gen (EX Stage)
-    input  wire                    EX_MDSel,        // Origin: ID/EX Pipeline Register
-    output reg         [WIDTH-1:0] EX_ALUResult_I,  // Destination: EX/MEM Pipeline Register & Forwarding Unit
-    output wire                    EX_Zero_I        // Destination: Branch Control Logic (EX Stage)
+module EX_ALU_RV32I #(parameter WIDTH = 32)(       
+    input  wire signed [WIDTH-1:0] EX_Op1,          // Origin: EX_ALU_Input_Sel 
+    input  wire signed [WIDTH-1:0] EX_Op2,          // Origin: EX_ALU_Input_Sel 
+    input  wire        [5:0]       EX_ALUControl,   // Origin: EX_ALUControl_Gen 
+    input  wire                    EX_MDSel,        // Origin: ID_EX_Reg
+    output reg         [WIDTH-1:0] EX_ALUResult_I   // Destination: EX_ALUSelect_Mux
     );
     
     //0 and 1 notation for width-parametrized ALU use
@@ -63,6 +60,6 @@ module ALU_RV32I #(parameter WIDTH = 32)(
         
     end
     
-    assign EX_Zero_I = (EX_ALUResult_I == ZERO);  // Destination: Branch Control Logic
+    // No ZERO logic needed anymore as Branch decisions are taken using logic in ID
     
 endmodule

@@ -1,8 +1,8 @@
 /*
 * Module: CPU_Control_Codes.vh
 * Description: Header file containing all requisite ALUControl, ALUOp,
-*              BranchSel, ImmediateSrc and Opcodes with readable definitions 
-*              for the Control Logic and ALU modules for readability.
+*              BranchSel, ImmediateSrc labels and Opcodes for the 
+*              Control Logic and ALU modules for readability.
 * Author: Aashrith S Narayn
 * Date: 14/02/2026
 */
@@ -10,9 +10,8 @@
 `ifndef CPU_CONTROL_CODES_VH
 `define CPU_CONTROL_CODES_VH
 
-
 //=======================================================
-//ALUControl Codes - Core Functions + Instruction Aliases
+// ALUControl Codes - Core Functions + Instruction Aliases
 //=======================================================
 
 //---------------- Core ALU Function Codes ------------------
@@ -32,7 +31,6 @@
 `define ALU_PASS_B        6'b001101
 `define ALU_PC_PLUS_IMM   6'b001110
 
-
 //----------- RV32M: Multiply / Divide / Remainder -----------
 `define ALU_MUL           6'b010000
 `define ALU_MULH          6'b010001
@@ -42,10 +40,10 @@
 `define ALU_DIVU          6'b010101
 `define ALU_REM           6'b010110
 `define ALU_REMU          6'b010111
-`define ALU_MAC           6'b011000    // NEW: Internal ALU code for MAC/MACI
+`define ALU_MAC           6'b011000    // Internal ALU code for MAC/MACI
 
 //--------------- Instruction Aliases ------------------
-// R-type and I-type
+// R-type and I-type (Memory and Jump addresses are calculated as ADDs)
 `define ALU_ADDI          `ALU_ADD
 `define ALU_LW            `ALU_ADD
 `define ALU_SW            `ALU_ADD
@@ -63,14 +61,9 @@
 
 `define ALU_MACI          `ALU_MAC
 
-// Branch aliases (Math required to evaluate the branch)
-// Target_Controller will look at ALU_Zero and TargetSel to finalize the decision
-`define ALU_BEQ           `ALU_SUB  // A - B == 0
-`define ALU_BNE           `ALU_SUB  // A - B != 0
-`define ALU_BLT           `ALU_SLT  // A < B (Signed)
-`define ALU_BGE           `ALU_SLT  // A >= B (Check if SLT is 0)
-`define ALU_BLTU          `ALU_SLTU // A < B (Unsigned)
-`define ALU_BGEU          `ALU_SLTU // A >= B (Check if SLTU is 0)
+// Note: Branch aliases (ALU_BEQ, etc.) are now removed. 
+// Branch math is now exclusively handled by the ID_Branch_Comparator. 
+// Main EX ALU receives ALU_NOP during branches.
 
 // Upper Immediate ops
 `define ALU_LUI           `ALU_PASS_B // Just pass Op2 (Immediate)
@@ -80,89 +73,58 @@
 `define ALU_NOP           6'b111111
 
 
+//=======================================================
+// ALUOp Codes - to guide ALUControl submodule (ID Stage)
+//=======================================================
+`define ALUOP_MEM      3'b000   // Base load/store for memory (add)
+`define ALUOP_BRANCH   3'b001   // Branch comparisons (NOP for ALU)
+`define ALUOP_RTYPE    3'b010   // R-type ops
+`define ALUOP_ITYPE    3'b011   // I-type ALU ops
+`define ALUOP_RMUL     3'b100   // RV32M (MUL/DIV)
+`define ALUOP_UTYPE    3'b101   // LUI, AUIPC
+`define ALUOP_JUMP     3'b110   // JAL (NOP for ALU)
+`define ALUOP_NOP      3'b111   // Fallback
 
+
+// ================================================================
+// TargetSel Codes - Used by ID_Target_Controller (ID Stage)
+// ================================================================
+`define BR_EQ    4'b0000   // BEQ
+`define BR_NE    4'b0001   // BNE
+`define UJ_AL    4'b0010   // JAL (jump always) 
+`define TR_NOP   4'b0011   // No branch / default
+`define UJ_ALR   4'b1001   // JALR
+`define BR_LT    4'b0100   // BLT
+`define BR_GE    4'b0101   // BGE
+`define BR_LTU   4'b0110   // BLTU
+`define BR_GEU   4'b0111   // BGEU
 
 
 //=======================================================
-//ALUOp Codes - to guide ALUControl submodule
+// ImmediateSrc Codes - (ID Stage)
 //=======================================================
-
-`define ALUOP_LSJ      3'b000   //Base load/store (add) + JALR
-`define ALUOP_BRANCH   3'b001   //Branch comparisons
-`define ALUOP_RTYPE    3'b010   //R-type ops
-`define ALUOP_ITYPE    3'b011   //I-type ALU ops
-`define ALUOP_RMUL     3'b100   //RV32M (MUL/DIV)
-`define ALUOP_UTYPE    3'b101   //LUI, AUIPC
-`define ALUOP_JUMP     3'b110   //JAL
-
-//Optional NOP or fallback (not used directly)
-`define ALUOP_NOP      3'b111
-
-
-
-
-
-
-// ==========================================================================
-// TargetSel Codes - for Target Controller to decide branch or jump behaviour
-// ==========================================================================
-
-`define BR_EQ    4'b0000   //BEQ
-`define BR_NE    4'b0001   //BNE
-
-`define UJ_AL    4'b0010   //JAL (jump always) (PC + Imm from ALU)
-`define TR_NOP   4'b0011   //No branch / default
-`define UJ_ALR   4'b1001   //JALR ((Rs1 + Imm) & ~1 from ALU) - JALR funct3 is 001
-
-`define BR_LT    4'b0100   //BLT
-`define BR_GE    4'b0101   //BGE
-`define BR_LTU   4'b0110   //BLTU
-`define BR_GEU   4'b0111   //BGEU
-
-
-
-
-
-
-//=======================================================
-//ImmediateSrc Codes - to select correct immediate format
-//=======================================================
-
-`define IMM_NONE 3'b000   //R-type (no immediate)
-`define IMM_I    3'b001   //I-type (ADDI, LW, JALR)
-`define IMM_S    3'b010   //S-type (SW)
-`define IMM_B    3'b011   //B-type (branches)
-`define IMM_U    3'b100   //U-type (LUI, AUIPC)
-`define IMM_J    3'b101   //J-type (JAL)
-
-
-
-
+`define IMM_NONE 3'b000   // R-type (no immediate)
+`define IMM_I    3'b001   // I-type (ADDI, LW, JALR)
+`define IMM_S    3'b010   // S-type (SW)
+`define IMM_B    3'b011   // B-type (branches)
+`define IMM_U    3'b100   // U-type (LUI, AUIPC)
+`define IMM_J    3'b101   // J-type (JAL)
 
 
 //==========================================================================
-//MemDataType Codes - for Load/Store Instructions (used by Control & DMEM)
+// MemDataType Codes - Used by ID_Control & MEM_Data_Memory
 //==========================================================================
-
-`define MEM_BYTE_SIGNED     3'b000     // LB / SB   - Load/Store signed byte
-`define MEM_HALF_SIGNED     3'b001     // LH / SH   - Load/Store signed halfword
-`define MEM_WORD            3'b010     // LW / SW   - Load/Store word (32-bit)
-`define MEM_BYTE_UNSIGNED   3'b100     // LBU       - Load unsigned byte
-`define MEM_HALF_UNSIGNED   3'b101     // LHU       - Load unsigned halfword
-
-//Default Fallback
-`define MEM_INVALID         3'b111     // Default / Non-memory instruction
-
-
-
-
+`define MEM_BYTE_SIGNED     3'b000     // LB / SB
+`define MEM_HALF_SIGNED     3'b001     // LH / SH
+`define MEM_WORD            3'b010     // LW / SW
+`define MEM_BYTE_UNSIGNED   3'b100     // LBU
+`define MEM_HALF_UNSIGNED   3'b101     // LHU
+`define MEM_INVALID         3'b111     // Default
 
 
 //=======================================================
-//Opcodes - Instruction class identifiers (optional)
-//Non-functional; for decode readability only
+// Opcodes - Instruction class identifiers (ID Stage)
 //=======================================================
-
 `define OPCODE_RTYPE   7'b0110011
 `define OPCODE_ITYPE   7'b0010011
 `define OPCODE_LOAD    7'b0000011
@@ -172,40 +134,25 @@
 `define OPCODE_AUIPC   7'b0010111
 `define OPCODE_JAL     7'b1101111
 `define OPCODE_JALR    7'b1100111
-`define OPCODE_MAC     7'b0001011   // RISC-V custom MAC: funct3 for MAC- 000, for MACI - 001
-
-
+`define OPCODE_MAC     7'b0001011
 
 
 //=======================================================
-//Forwarding Mux Codes - For EX Stage Forwarding Logic
+// Forwarding Mux Codes - (EX Stage)
 //=======================================================
 `define FWD_NO_FORWARD  2'b00  // Use value from ID/EX Register (No Hazard)
 `define FWD_FROM_MEM    2'b10  // Forward from EX/MEM Register (EX Hazard)
 `define FWD_FROM_WB     2'b01  // Forward from MEM/WB Register (MEM Hazard)
 
 
-
-
-
 //===========================================================
-//Simulation Aids: Hex Files and Simulation Parameters
-//Memory Hex Files: For Simulation Aid (optional)
-//            1. Instruction Memory Program
-//            2. Data Memory Program 
-//Avoids synthezisable blocks with ifndef, for easy testing  
+// Simulation Aids: Hex Files and Simulation Parameters
 //===========================================================
-
-// NOTE: ABSOLUTE PATHS ARE USED HERE, PLEASE CHANGE AS PER PROJECT DIRECTORY LOCATION
-//reading from file
+// NOTE: Please update the file paths for when using the files in Vivado
 `define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
 `define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
-
-//writing to file
 `define IMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
 `define DMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
-
-//simulation params
 `define SIM_TIME    10000
 
 `endif

@@ -1,16 +1,14 @@
 /*
-* Module: PC_Adder.v
+* Module: IF_PC_Incrementer.v
 * Description: Computes the address of the next sequential instruction 
 * by adding 4 to the current Program Counter (PC).
-* Stage - IF
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
 
-//(* dont_touch = "true" *)
-module PC_Incrementer #(
+module IF_PC_Incrementer #(
     parameter PC_WIDTH = 32,
     parameter PC_STEP  = 4
     )(
@@ -19,7 +17,7 @@ module PC_Incrementer #(
     );
     
     always @(*) begin
-        IF_PC_Plus_4 = IF_PC + PC_STEP;    //incrementing PC with step size
+        IF_PC_Plus_4 = IF_PC + PC_STEP;      //incrementing PC with step size
     end
     
 endmodule

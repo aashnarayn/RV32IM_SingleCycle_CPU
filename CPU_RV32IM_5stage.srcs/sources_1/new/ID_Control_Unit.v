@@ -1,9 +1,11 @@
 /*
-* Module: Control_Unit.v
-* Description: Decodes instruction opcodes to generate control signals for the Datapath.
-* Supports RV32IM Standard ISA + Custom MAC/MACI extensions.
+* Module: ID_Control_Unit.v
+* Description: Decodes instruction opcodes to generate control signals for 
+* the Datapath. Supports RV32IM Standard ISA + Custom MAC/MACI extensions.
 * Maintains "Ordered Bundle" formatting for explicit signal tracking.
-* Stage: ID
+* Initializing all outputs to 0 at the top of the always block is critical 
+* for FPGA synthesis. It guarantees no latches are inferred for combinational 
+* paths that aren't explicitly assigned in a case branch.
 * Author: Aashrith S Narayn
 * Date: 14/02/2026
 */
@@ -11,38 +13,38 @@
 `timescale 1ns / 1ps
 `include "CPU_Control_Codes.vh"
 
-module Control_Unit #(
+module ID_Control_Unit #(
     parameter WIDTH       = 32,
     parameter INSTR_WIDTH = 32
     )(
     // Inputs from Instruction Splitter (ID Stage)
-    input  wire [6:0]             ID_Opcode,        // Origin: Instruction Splitter
-    input  wire [2:0]             ID_Funct3,        // Origin: Instruction Splitter
-    input  wire [6:0]             ID_Funct7,        // Origin: Instruction Splitter
+    input  wire [6:0]             ID_Opcode,        // Origin: IF_ID_Reg (assigned from Top-Level)
+    input  wire [2:0]             ID_Funct3,        // Origin: IF_ID_Reg (assigned from Top-Level)
+    input  wire [6:0]             ID_Funct7,        // Origin: IF_ID_Reg (assigned from Top-Level)
     
     // Execution Control (To be used in EX Stage)
-    output reg [2:0]              ID_ALUOp,         // Destination: ID/EX Pipeline Register
-    output reg                    ID_MDSel,         // Destination: ID/EX Pipeline Register (M-Extension Enable)
-    output reg                    ID_MACSel,        // Destination: ID/EX Pipeline Register (Accumulator Enable)
-    output reg [3:0]              ID_TargetSel,     // Destination: ID/EX Pipeline Register (Branch Unit)
-    output reg                    ID_ALUSrc1,       // Destination: ID/EX Pipeline Register (0:Rs1, 1:PC)
-    output reg                    ID_ALUSrc2,       // Destination: ID/EX Pipeline Register (0:Rs2, 1:Imm)
+    output reg [2:0]              ID_ALUOp,         // Destination: ID_EX_Reg
+    output reg                    ID_MDSel,         // Destination: ID_EX_Reg (M-Extension Enable)
+    output reg                    ID_MACSel,        // Destination: ID_EX_Reg (Accumulator Enable)
+    output reg                    ID_ALUSrc1,       // Destination: ID_EX_Reg (0:Rs1, 1:PC)
+    output reg                    ID_ALUSrc2,       // Destination: ID_EX_Reg (0:Rs2, 1:Imm)
     
     // Memory Control (To be used in MEM Stage)
-    output reg                    ID_MemRead,       // Destination: ID/EX Pipeline Register
-    output reg                    ID_MemWrite,      // Destination: ID/EX Pipeline Register
-    output reg [2:0]              ID_MemDataType,   // Destination: ID/EX Pipeline Register
+    output reg                    ID_MemRead,       // Destination: ID_EX_Reg
+    output reg                    ID_MemWrite,      // Destination: ID_EX_Reg
+    output reg [2:0]              ID_MemDataType,   // Destination: ID_EX_Reg
     
     // Write-Back Control (To be used in WB Stage)
-    output reg                    ID_RegWrite,      // Destination: ID/EX Pipeline Register
-    output reg [1:0]              ID_MemToReg,      // Destination: ID/EX Pipeline Register (00:ALU, 01:Mem, 10:PC+4)
+    output reg                    ID_RegWrite,      // Destination: ID_EX_Reg
+    output reg [1:0]              ID_MemToReg,      // Destination: ID_EX_Reg (00:ALU, 01:Mem, 10:PC+4)
     
     // Local Decode Control (Used immediately in ID Stage)
-    output reg [2:0]              ID_ImmediateSrc   // Destination: Imm_Gen (ID Stage)
+    output reg [2:0]              ID_ImmediateSrc,  // Destination: ID_Imm_Gen
+    output reg [3:0]              ID_TargetSel      // Destination: ID_Target_Controller
     );
     
     always @(*) begin
-        // Safety Defaults (Zeroing out to prevent latches, but overridden in bundles below)
+        // Safety Defaults 
         ID_ALUOp        = `ALUOP_NOP;
         ID_MDSel        = 1'b0;
         ID_MACSel       = 1'b0;
@@ -57,7 +59,6 @@ module Control_Unit #(
         ID_ALUSrc2      = 1'b0;
 
         case (ID_Opcode)
-        
             `OPCODE_RTYPE:  begin            
                 case (ID_Funct7)
                     7'b0000000,
@@ -102,7 +103,7 @@ module Control_Unit #(
             end
             
             `OPCODE_LOAD:   begin            
-                ID_ALUOp        = `ALUOP_LSJ;
+                ID_ALUOp        = `ALUOP_MEM;
                 ID_MDSel        = 1'b0;
                 ID_MACSel       = 1'b0;
                 ID_ImmediateSrc = `IMM_I;
@@ -121,7 +122,7 @@ module Control_Unit #(
             end
             
             `OPCODE_STORE:  begin            
-                ID_ALUOp        = `ALUOP_LSJ;
+                ID_ALUOp        = `ALUOP_MEM;
                 ID_MDSel        = 1'b0;
                 ID_MACSel       = 1'b0;
                 ID_ImmediateSrc = `IMM_S;
@@ -203,7 +204,7 @@ module Control_Unit #(
             end
             
             `OPCODE_JALR:   begin            
-                ID_ALUOp        = `ALUOP_LSJ;
+                ID_ALUOp        = `ALUOP_MEM;
                 ID_MDSel        = 1'b0;
                 ID_MACSel       = 1'b0;
                 ID_ImmediateSrc = `IMM_I;
@@ -217,8 +218,8 @@ module Control_Unit #(
                 ID_ALUSrc2      = 1'b1;
             end
 
-            `OPCODE_MAC: begin                         // Custom MAC and MACI instruction decoding
-                ID_ALUOp        = `ALUOP_RMUL; 
+            `OPCODE_MAC: begin                         
+                ID_ALUOp         = `ALUOP_RMUL; 
                 ID_MDSel         = 1'b1;
                 ID_MACSel        = 1'b1;
                 ID_TargetSel     = `TR_NOP;

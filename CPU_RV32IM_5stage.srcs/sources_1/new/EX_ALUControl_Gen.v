@@ -1,9 +1,10 @@
 /*
-* Module: ALUControl_Gen.v
+* Module: EX_ALUControl_Gen.v
 * Description: Generates ALUcontrol signals based on ALUop and split 
-* instruction fields. Updated to support MAC/MACI by identifying 
-* the multiplication requirement for the MAC_Adder path.
-* Stage: EX
+* instruction fields. Updated to support MAC/MACI. Branch operations 
+* resolve to ALU_NOP here because the dedicated comparator in the ID 
+* stage handles them. MAC instructions resolve to ALU_MUL to pipeline 
+* the product into the MAC Adder.
 * Author: Aashrith S Narayn
 * Date: 14/02/2026
 */
@@ -11,34 +12,27 @@
 `timescale 1ns / 1ps
 `include "CPU_Control_Codes.vh"
 
-module ALUControl_Gen (
-    input  wire [2:0] EX_ALUOp,         // Origin: ID_EX Pipeline Register
-    input  wire       EX_MACSel,        // NEW: Origin: ID_EX Pipeline Register
-    input  wire [2:0] EX_Funct3,        // Origin: ID/EX Pipeline Register
-    input  wire [6:0] EX_Funct7,        // Origin: ID/EX Pipeline Register
-    input  wire [6:0] EX_Opcode,        // Origin: ID/EX Pipeline Register
-    output reg  [5:0] EX_ALUControl     // Destination: ALU_RV32I, ALU_RV32M
+module EX_ALUControl_Gen (
+    input  wire [2:0] EX_ALUOp,         // Origin: ID_EX_Reg
+    input  wire       EX_MACSel,        // Origin: ID_EX_Reg
+    input  wire [2:0] EX_Funct3,        // Origin: ID/EX_Reg
+    input  wire [6:0] EX_Funct7,        // Origin: ID/EX_Reg
+    input  wire [6:0] EX_Opcode,        // Origin: ID/EX_Reg
+    output reg  [5:0] EX_ALUControl     // Destination: EX_ALU_RV32I, EX_LU_RV32M
     );
   
     always @(*) begin
         case (EX_ALUOp)
     
-            // Load/Store/JALR: ALU does ADD
-            `ALUOP_LSJ: begin
+            // Load/Store: ALU does ADD for Memory Address calculation
+            `ALUOP_MEM: begin
                 EX_ALUControl = `ALU_ADD;
             end
         
             // Branches: Unified Comparison Strategy
             `ALUOP_BRANCH: begin
-                case ({1'b0, EX_Funct3})
-                    `BR_EQ:   EX_ALUControl = `ALU_BEQ;
-                    `BR_NE:   EX_ALUControl = `ALU_BNE;
-                    `BR_LT:   EX_ALUControl = `ALU_BLT;
-                    `BR_GE:   EX_ALUControl = `ALU_BGE;
-                    `BR_LTU:  EX_ALUControl = `ALU_BLTU;
-                    `BR_GEU:  EX_ALUControl = `ALU_BGEU;
-                    default:  EX_ALUControl = `ALU_NOP;
-                endcase
+                // Branch resolution is fully handled in ID stage by the dedicated comparator.
+                EX_ALUControl = `ALU_NOP;
             end
     
             // R-Type Integer
@@ -75,7 +69,7 @@ module ALUControl_Gen (
             `ALUOP_RMUL: begin
                 if (EX_MACSel) begin
                     // For MAC/MACI, we need a standard 32-bit signed multiply 
-                    // to feed the Product into the MAC_Adder.
+                    // to feed the Product into the MAC Accumulator.
                     EX_ALUControl = `ALU_MUL;
                 end else begin
                     case (EX_Funct3)
@@ -99,7 +93,8 @@ module ALUControl_Gen (
     
             // Jump
             `ALUOP_JUMP: begin
-                EX_ALUControl = `ALU_JAL;
+                // Jump targets are computed in ID. ALU does nothing.
+                EX_ALUControl = `ALU_NOP;
             end
     
             default: EX_ALUControl = `ALU_NOP;

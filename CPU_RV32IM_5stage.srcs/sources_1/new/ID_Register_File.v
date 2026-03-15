@@ -1,18 +1,19 @@
 /*
-* Module: Register_File.v
+* Module: ID_Register_File.v
 * Description: Implements the general-purpose register file (x0-x31) of 
-* the RV32IM architecture. Supports triple-port read 
-* (2 + 1 RdData read for MAC) and single-port write functionality. 
+* the RV32IM architecture. Supports triple-port read (2 + 1 RdData read 
+* for MAC) and single-port write functionality. 
 * Register x0 is hardwired to 0 logically. 
-* Updated with Internal Forwarding for 5-stage pipelining.
+* Includes combinational write-to-read bypass logic. This is the
+* critical path enabler that allows the ID_Branch_Comparator to 
+* resolve stalls in a single cycle.
 * Author: Aashrith S Narayn
 * Date: 13/02/2026
 */
 
 `timescale 1ns / 1ps
 
-//(* dont_touch = "true" *)
-module Register_File #(
+module ID_Register_File #(
     parameter WIDTH      = 32,
     parameter REG_COUNT  = 32
     )(
@@ -24,18 +25,18 @@ module Register_File #(
     input  wire [WIDTH-1:0]             WB_WriteData, // Origin: Write-Back Mux (Selects between ALU Result or Memory Data)
     
     // Read Ports (Signals come from the current Instruction in ID stage)
-    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,   // Origin: Instruction Splitter (Instr[19:15])
-    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,   // Origin: Instruction Splitter (Instr[24:20])
-    input  wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,    // Origin: Instruction Splitter (Instr[11:7] - Source 3 for MAC)
+    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs1Addr,   // Origin: IF_ID_Reg (assigned from Top-Level)
+    input  wire [$clog2(REG_COUNT)-1:0] ID_Rs2Addr,   // Origin: IF_ID_Reg (assigned from Top-Level)
+    input  wire [$clog2(REG_COUNT)-1:0] ID_RdAddr,    // Origin: IF_ID_Reg (assigned from Top-Level) (Source 3 for MAC)
     
     // Data Outputs (Going into the ID/EX Pipeline Register)
-    output wire [WIDTH-1:0]             ID_Rs1Data,   // Destination: ID/EX Pipeline Register
-    output wire [WIDTH-1:0]             ID_Rs2Data,   // Destination: ID/EX Pipeline Register
-    output wire [WIDTH-1:0]             ID_RdData     // Destination: ID/EX Pipeline Register (Future MAC Accumulator)
+    output wire [WIDTH-1:0]             ID_Rs1Data,   // Destination: Branch Comparator, ID/EX Pipeline Register
+    output wire [WIDTH-1:0]             ID_Rs2Data,   // Destination: Branch Comparator, ID/EX Pipeline Register
+    output wire [WIDTH-1:0]             ID_RdData     // Destination: ID/EX Pipeline Register (For MAC Accumulator)
     );
     
     //RV32IM Register Array
-    reg [WIDTH-1:0] RegArray [0:REG_COUNT-1];
+    (* ram_style = "distributed" *)reg [WIDTH-1:0] RegArray [0:REG_COUNT-1];
     
     localparam ADDR_WIDTH = $clog2(REG_COUNT); 
     localparam DATA_ZERO  = {WIDTH{1'b0}};
