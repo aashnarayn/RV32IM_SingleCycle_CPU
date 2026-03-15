@@ -54,6 +54,7 @@ module Data_Memory #(
                     if (Byte_Offset == 2'b10) DataMem[Word_Addr][31:16] <= MEM_WriteData[15:0];
                 end
                 `MEM_WORD: DataMem[Word_Addr] <= MEM_WriteData; // SW
+                default: DataMem[Word_Addr] <= DataMem[Word_Addr]; // No Write
             endcase
         end
     end

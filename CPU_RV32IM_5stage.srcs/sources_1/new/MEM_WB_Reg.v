@@ -1,5 +1,5 @@
 /*
-* Module: MEM_WB_reg.v
+* Module: MEM_WB_Reg.v
 * Description: Pipeline register between Memory (MEM) and 
 * Write-Back (WB) stages. 
 * Carries final data for Register File update.
@@ -9,7 +9,7 @@
 
 `timescale 1ns / 1ps
 
-module MEM_WB_reg #(
+module MEM_WB_Reg #(
     parameter WIDTH       = 32,
     parameter PC_WIDTH    = 32,
     parameter REG_COUNT   = 32

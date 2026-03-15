@@ -1,5 +1,5 @@
 /*
-* Module: ID_EX_reg.v
+* Module: ID_EX_Reg.v
 * Description: Pipeline register between Instruction Decode (ID) and 
 * Execute (EX) stages. Updated to support 3-operand datapath for MAC/MACI.
 * Carries Control Signals, Data, and Split Instruction Fields.
@@ -9,7 +9,7 @@
 
 `timescale 1ns / 1ps
 
-module ID_EX_reg #(
+module ID_EX_Reg #(
     parameter WIDTH       = 32,
     parameter PC_WIDTH    = 32,
     parameter REG_COUNT   = 32

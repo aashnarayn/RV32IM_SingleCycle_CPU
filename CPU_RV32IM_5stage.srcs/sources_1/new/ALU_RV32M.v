@@ -66,8 +66,6 @@ module ALU_RV32M #(parameter WIDTH = 32)(
     reg             sign_q, sign_r;
     reg             is_div, is_rem; // To latch the operation type
     
-    reg [WIDTH:0] diff; // 33-bit for carry
-    
     // Logic to detect if current op is Division
     wire is_div_op = EX_MDSel && ((EX_ALUControl == `ALU_DIV)  || (EX_ALUControl == `ALU_DIVU) ||
                                   (EX_ALUControl == `ALU_REM)  || (EX_ALUControl == `ALU_REMU));
@@ -81,7 +79,7 @@ module ALU_RV32M #(parameter WIDTH = 32)(
     always @(*) begin
         case (state)
             IDLE: next_state = (is_div_op) ? WORK : IDLE;
-            WORK: next_state = (count == 0) ? DONE : WORK;
+            WORK: next_state = (count == 1) ? DONE : WORK;
             DONE: next_state = IDLE; // Handshake complete, return to IDLE
             default: next_state = IDLE;
         endcase
@@ -96,6 +94,14 @@ module ALU_RV32M #(parameter WIDTH = 32)(
             EX_Stall_M = 1'b0;
     end
 
+    // Combinational subtraction
+    wire [WIDTH:0] sub_result = working_reg[2*WIDTH:WIDTH] - {1'b0, divisor_abs};
+    // If the MSB is 0, the result is positive (subtraction successful)
+    wire do_sub = ~sub_result[WIDTH]; 
+    
+    // Mux to select the new upper half of the working register
+    wire [WIDTH:0] next_upper = do_sub ? sub_result : working_reg[2*WIDTH:WIDTH];
+
     // C. Divider Datapath (Sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -106,7 +112,6 @@ module ALU_RV32M #(parameter WIDTH = 32)(
             sign_r      <= 0;
             is_div      <= 0;
             is_rem      <= 0;
-            diff        <= 0;
         end else begin
             case (state)
                 IDLE: begin
@@ -135,26 +140,34 @@ module ALU_RV32M #(parameter WIDTH = 32)(
                 end
                 
                 WORK: begin
-                    // 2. Iterative Calculation (Shift & Subtract)
-                    // working_reg structure: | Remainder (32) | Quotient (32) | (Implicit Shift)
-                    
-                    // We look at the top 32+1 bits after the shift
-                    diff = working_reg[2*WIDTH:WIDTH] - {1'b0, divisor_abs};
-                    
-                    if (!diff[WIDTH]) begin // No borrow (Result positive)
-                        working_reg[2*WIDTH:WIDTH] <= diff[WIDTH-1:0];
-                        working_reg[0] <= 1'b1; // Set Quotient bit
+                    if (count > 1) begin
+                        // 2. Iterative Shift-Subtract (subtraction done outside always block for combinational logic)
+                        // Shift left by 1. 
+                        // Take the updated upper half (minus its MSB which shifts out), 
+                        // the lower half (minus its MSB which shifts to upper), 
+                        // append the quotient bit, and pad with 0 for the shift.
+                        working_reg <= {next_upper[WIDTH-1:0], working_reg[WIDTH-1:1], do_sub, 1'b0};
+                    end else begin
+                        // Final cycle: Do not shift.
+                        // Just update the upper half with the final remainder and insert the final quotient bit.
+                        working_reg <= {next_upper, working_reg[WIDTH-1:1], do_sub};
                     end
                     
                     count <= count - 1;
-                    
-                    if (count > 1) 
-                        working_reg <= {working_reg[2*WIDTH-1:0], 1'b0}; // Shift for next bit
-                    // else: Don't shift on the very last step, just subtract
                 end
                 
                 DONE: begin
                     // 3. Cleanup (Nothing to do, results are stable in register)
+                end
+
+                default: begin
+                    count       <= 0;
+                    working_reg <= 0;
+                    divisor_abs <= 0;
+                    sign_q      <= 0;
+                    sign_r      <= 0;
+                    is_div      <= 0;
+                    is_rem      <= 0;
                 end
             endcase
         end
@@ -173,7 +186,7 @@ module ALU_RV32M #(parameter WIDTH = 32)(
         // Defaults to prevent latches
         EX_ALUResult_M = 0;
         quot_tmp = working_reg[WIDTH-1:0];
-        rem_tmp  = working_reg[2*WIDTH:WIDTH+1];
+        rem_tmp  = working_reg[2*WIDTH-1:WIDTH];
         
         if (EX_MDSel) begin
             if (is_div_op) begin
@@ -185,7 +198,7 @@ module ALU_RV32M #(parameter WIDTH = 32)(
                     else        EX_ALUResult_M = (sign_r) ? -rem_tmp : rem_tmp;
                     
                     // Handle Divide By Zero (Corner Case)
-                    if (EX_Op2 == 0) EX_ALUResult_M = -1; // Simplified spec compliance
+                    if (EX_Op2 == 0) EX_ALUResult_M = is_rem ? EX_Op1 : {WIDTH{1'b1}};  // DIV and REM corner case compliance
                 end else begin
                     EX_ALUResult_M = 0; // Invalid during calculation
                 end

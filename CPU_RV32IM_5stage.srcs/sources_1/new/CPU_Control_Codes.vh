@@ -45,10 +45,11 @@
 `define ALU_MAC           6'b011000    // NEW: Internal ALU code for MAC/MACI
 
 //--------------- Instruction Aliases ------------------
-//R-type and I-type
+// R-type and I-type
 `define ALU_ADDI          `ALU_ADD
 `define ALU_LW            `ALU_ADD
 `define ALU_SW            `ALU_ADD
+`define ALU_JAL           `ALU_ADD
 `define ALU_JALR          `ALU_ADD
 
 `define ALU_ANDI          `ALU_AND
@@ -62,20 +63,18 @@
 
 `define ALU_MACI          `ALU_MAC
 
-// Branch aliases
-`define ALU_BEQ           `ALU_EQ
-`define ALU_BNE           `ALU_EQ
-`define ALU_BLT           `ALU_SLT         
-`define ALU_BGE           `ALU_GE           
-`define ALU_BLTU          `ALU_SLTU       
-`define ALU_BGEU          `ALU_GEU          
+// Branch aliases (Math required to evaluate the branch)
+// Target_Controller will look at ALU_Zero and TargetSel to finalize the decision
+`define ALU_BEQ           `ALU_SUB  // A - B == 0
+`define ALU_BNE           `ALU_SUB  // A - B != 0
+`define ALU_BLT           `ALU_SLT  // A < B (Signed)
+`define ALU_BGE           `ALU_SLT  // A >= B (Check if SLT is 0)
+`define ALU_BLTU          `ALU_SLTU // A < B (Unsigned)
+`define ALU_BGEU          `ALU_SLTU // A >= B (Check if SLTU is 0)
 
-//Upper Immediate ops
-`define ALU_LUI           `ALU_PASS_B
-`define ALU_AUIPC         `ALU_PC_PLUS_IMM
-
-//Jumps
-`define ALU_JAL           `ALU_PC_PLUS_IMM
+// Upper Immediate ops
+`define ALU_LUI           `ALU_PASS_B // Just pass Op2 (Immediate)
+`define ALU_AUIPC         `ALU_ADD    // PC + Immediate
 
 //--------------- Fallback ------------------
 `define ALU_NOP           6'b111111

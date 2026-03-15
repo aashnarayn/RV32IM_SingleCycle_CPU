@@ -1,5 +1,5 @@
 /*
-* Module: IF_ID_reg.v
+* Module: IF_ID_Reg.v
 * Description: Pipeline register between Instruction Fetch (IF) and 
 * Instruction Decode (ID) stages. 
 * Latchs PC and Instruction on clock edge and supports synchronous 
@@ -10,7 +10,7 @@
 
 `timescale 1ns / 1ps
 
-module IF_ID_reg #(
+module IF_ID_Reg #(
     parameter WIDTH = 32,
     parameter INSTR_WIDTH = 32,
     parameter PC_WIDTH = 32

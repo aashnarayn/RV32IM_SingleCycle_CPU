@@ -1,5 +1,5 @@
 /*
-* Module: EX_MEM_reg.v
+* Module: EX_MEM_Reg.v
 * Description: Pipeline register between Execute (EX) and 
 * Memory (MEM) stages. 
 * Carries Memory Access signals, Write-Back control, and ALU results.
@@ -9,7 +9,7 @@
 
 `timescale 1ns / 1ps
 
-module EX_MEM_reg #(
+module EX_MEM_Reg #(
     parameter WIDTH       = 32,
     parameter PC_WIDTH    = 32,
     parameter REG_COUNT   = 32

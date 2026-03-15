@@ -44,7 +44,7 @@ module CPU_RV32IM_Pipeline #(
     output wire                   CPU_MDSel,
     output wire                   CPU_MacSel,
     output wire [2:0]             CPU_ImmediateSrc,
-    output wire [2:0]             CPU_TargetSel,
+    output wire [3:0]             CPU_TargetSel,
     output wire                   CPU_RegWrite,
     output wire                   CPU_MemRead,
     output wire                   CPU_MemWrite,
@@ -291,7 +291,7 @@ module CPU_RV32IM_Pipeline #(
     // ===========================================================================
     
     (* dont_touch = "true" *)
-    IF_ID_reg #(.WIDTH(INSTR_WIDTH), .PC_WIDTH(PC_WIDTH))
+    IF_ID_Reg #(.WIDTH(INSTR_WIDTH), .PC_WIDTH(PC_WIDTH))
     CPU_IF_ID_Reg (
         .CPU_clk(CPU_clk),
         .CPU_rst_n(CPU_sync_rst_n),
@@ -402,7 +402,7 @@ module CPU_RV32IM_Pipeline #(
     // ===========================================================================
     
     (* dont_touch = "true" *)
-    ID_EX_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
+    ID_EX_Reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_ID_EX_Reg (
         .CPU_clk(CPU_clk),
         .CPU_rst_n(CPU_sync_rst_n),
@@ -571,7 +571,7 @@ module CPU_RV32IM_Pipeline #(
     // ===========================================================================
 
     (* dont_touch = "true" *)
-    EX_MEM_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
+    EX_MEM_Reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_EX_MEM_Reg (
         .CPU_clk(CPU_clk),
         .CPU_rst_n(CPU_sync_rst_n),
@@ -617,7 +617,7 @@ module CPU_RV32IM_Pipeline #(
     // ===========================================================================
 
     (* dont_touch = "true" *)
-    MEM_WB_reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
+    MEM_WB_Reg #(.WIDTH(DATA_WIDTH), .PC_WIDTH(PC_WIDTH), .REG_COUNT(REG_COUNT))
     CPU_MEM_WB_Reg (
         .CPU_clk(CPU_clk),
         .CPU_rst_n(CPU_sync_rst_n),

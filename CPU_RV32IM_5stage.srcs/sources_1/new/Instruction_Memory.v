@@ -30,7 +30,7 @@ module Instruction_Memory #(
     assign IF_Instr_RV32IM = InstrMem[IF_PC[BYTE_RANGE-1:2]];
     
     // Linter violation avoidance
-    wire [PC_WIDTH-BYTE_RANGE-1:0] IMEM_unused_bits = |{IF_PC[PC_WIDTH-1:BYTE_RANGE], IF_PC[1:0]};
+    wire [PC_WIDTH-BYTE_RANGE-1:0] IMEM_unused_bits = { (PC_WIDTH-BYTE_RANGE){ |{IF_PC[PC_WIDTH-1:BYTE_RANGE], IF_PC[1:0]} } };
     
     // Initialising InstrMem with program data
     initial begin

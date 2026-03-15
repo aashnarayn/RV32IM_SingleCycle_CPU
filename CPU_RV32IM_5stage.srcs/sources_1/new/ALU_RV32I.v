@@ -40,33 +40,23 @@ module ALU_RV32I #(parameter WIDTH = 32)(
         if (EX_MDSel) begin
             EX_ALUResult_I = ZERO;  //Zero default for when MDSel is asserted in this ALU
         end else begin
+            // RV32I spec operations (RISBUJ) - core math functions only
             case (EX_ALUControl) 
-            
-                //Arithmetic and Logical Ops (R and I type, Load and Store) & Some Branches
-                `ALU_ADD,
-                `ALU_AUIPC,
-                `ALU_JAL:    EX_ALUResult_I = EX_Op1 + EX_Op2;                           //ADD, ADDI, LW, SW, JALR - Rs1 + Imm, (JAL, AUIPC} - PC + Imm
-                `ALU_SUB:    EX_ALUResult_I = EX_Op1 - EX_Op2;                           //SUB
-                `ALU_AND:    EX_ALUResult_I = EX_Op1 & EX_Op2;                           //AND, ANDI
-                `ALU_OR:     EX_ALUResult_I = EX_Op1 | EX_Op2;                           //OR, ORI
-                `ALU_XOR:    EX_ALUResult_I = EX_Op1 ^ EX_Op2;                           //XOR, XORI
-                `ALU_SLL:    EX_ALUResult_I = EX_Op1 << EX_Op2[$clog2(WIDTH)-1:0];       //SLL, SLLI
-                `ALU_SRL:    EX_ALUResult_I = EX_Op1 >> EX_Op2[$clog2(WIDTH)-1:0];       //SRL, SRLI
-                `ALU_SRA:    EX_ALUResult_I = EX_Op1 >>> EX_Op2[$clog2(WIDTH)-1:0];      //SRA, SRAI
-                `ALU_SLT,
-                `ALU_BLT,
-                `ALU_BGE:    EX_ALUResult_I = (EX_Op1 < EX_Op2) ? ONE : ZERO;            //SLT, SLTI, BLT, BGE
-                `ALU_SLTU,
-                `ALU_BLTU,
-                `ALU_BGEU:   EX_ALUResult_I = (uOp1 < uOp2) ? ONE : ZERO;                //SLTU, SLTIU, BGEU
-                `ALU_BEQ,
-                `ALU_BNE:    EX_ALUResult_I = ((EX_Op1 - EX_Op2) == 0) ? ZERO : ONE;     //BEQ, BNE
-                `ALU_LUI:    EX_ALUResult_I = EX_Op2;                                    //LUI - Result = Imm
+                `ALU_ADD:    EX_ALUResult_I = EX_Op1 + EX_Op2;
+                `ALU_SUB:    EX_ALUResult_I = EX_Op1 - EX_Op2;
+                `ALU_AND:    EX_ALUResult_I = EX_Op1 & EX_Op2;
+                `ALU_OR:     EX_ALUResult_I = EX_Op1 | EX_Op2;
+                `ALU_XOR:    EX_ALUResult_I = EX_Op1 ^ EX_Op2;
+                `ALU_SLL:    EX_ALUResult_I = EX_Op1 << EX_Op2[$clog2(WIDTH)-1:0];
+                `ALU_SRL:    EX_ALUResult_I = EX_Op1 >> EX_Op2[$clog2(WIDTH)-1:0];
+                `ALU_SRA:    EX_ALUResult_I = EX_Op1 >>> EX_Op2[$clog2(WIDTH)-1:0];
+                `ALU_SLT:    EX_ALUResult_I = (EX_Op1 < EX_Op2) ? ONE : ZERO;
+                `ALU_SLTU:   EX_ALUResult_I = (uOp1 < uOp2) ? ONE : ZERO;
+                `ALU_PASS_B: EX_ALUResult_I = EX_Op2;
                         
-                //default cases
-                `ALU_NOP:    EX_ALUResult_I = ZERO;                                      //NOP
-                default:     EX_ALUResult_I = ZERO;                                      //Unknown ALUControl, default to NOP
-                
+                // Default cases
+                `ALU_NOP:    EX_ALUResult_I = ZERO;
+                default:     EX_ALUResult_I = ZERO;
             endcase
              
         end
