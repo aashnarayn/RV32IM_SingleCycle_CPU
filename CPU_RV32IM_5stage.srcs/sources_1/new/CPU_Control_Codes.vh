@@ -149,10 +149,17 @@
 // Simulation Aids: Hex Files and Simulation Parameters
 //===========================================================
 // NOTE: Please update the file paths for when using the files in Vivado
+<<<<<<< HEAD
 `define IMEM_HEX_PROGRAM "/home/chin/RV32IM_SingleCycle_CPU/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
 `define DMEM_HEX_BLOCK   "/home/chin/RV32IM_SingleCycle_CPU/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
 `define IMEM_HEX_DUMP    "/home/chin/RV32IM_SingleCycle_CPU/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
 `define DMEM_HEX_DUMP    "/home/chin/RV32IM_SingleCycle_CPU/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
+=======
+`define IMEM_HEX_PROGRAM "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Program.mem"
+`define DMEM_HEX_BLOCK   "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem"
+`define IMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/IMEM_RV32IM_Dump.mem"
+`define DMEM_HEX_DUMP    "/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.srcs/sources_1/new/Mem_Hex_Files/DMEM_Data_Dump.mem"
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
 `define SIM_TIME    10000
 
 `endif

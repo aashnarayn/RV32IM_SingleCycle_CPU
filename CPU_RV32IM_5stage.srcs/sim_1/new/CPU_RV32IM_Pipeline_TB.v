@@ -188,11 +188,15 @@ module CPU_RV32IM_Pipeline_TB;
         // A. Assert Reset
         CPU_rst_n = 0;
         #20;
+<<<<<<< HEAD
         // FIX: Check safety states WHILE reset is still held low
         if (CPU_PC !== 32'h80000000) begin // IF_Program_Counter initializes to 0x80000000 internally
             $display("[FAIL] PC not initialized correctly during reset! PC = %h", CPU_PC);
             $stop;
         end
+=======
+        CPU_rst_n = 1; // Async Assert
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
         
         // B. Wait for Synchronizer to propagate Reset (approx 3-4 cycles)
         // We need to give the FPGA time to clear the flip-flops.

@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<<<<<<< HEAD
 <!-- Product Version: Vivado v2025.1.1 (64-bit)                              -->
 <!--                                                                         -->
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
 <!-- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.   -->
 
 <Project Product="Vivado" Version="7" Minor="70" Path="/home/chin/RV32IM_SingleCycle_CPU/CPU_RV32IM_5stage.xpr">
+=======
+<!-- Product Version: Vivado v2024.2 (64-bit)                              -->
+<!--                                                                         -->
+<!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
+<!-- Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.   -->
+
+<Project Product="Vivado" Version="7" Minor="68" Path="/home/iriz/Desktop/Active/Vivado_2024_2/CPU_RV32IM_5stage/CPU_RV32IM_5stage.xpr">
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="423f0da48c1342529d59b63c18c0bd69"/>
@@ -29,12 +38,21 @@
     <Option Name="SimulatorGccInstallDirVCS" Val=""/>
     <Option Name="SimulatorGccInstallDirRiviera" Val=""/>
     <Option Name="SimulatorGccInstallDirActiveHdl" Val=""/>
+<<<<<<< HEAD
     <Option Name="SimulatorVersionXsim" Val="2025.1"/>
     <Option Name="SimulatorVersionModelSim" Val="2024.3"/>
     <Option Name="SimulatorVersionQuesta" Val="2024.3_3"/>
     <Option Name="SimulatorVersionXcelium" Val="24.09.001"/>
     <Option Name="SimulatorVersionVCS" Val="W-2024.09-SP1"/>
     <Option Name="SimulatorVersionRiviera" Val="2024.10"/>
+=======
+    <Option Name="SimulatorVersionXsim" Val="2024.2"/>
+    <Option Name="SimulatorVersionModelSim" Val="2024.1"/>
+    <Option Name="SimulatorVersionQuesta" Val="2024.1"/>
+    <Option Name="SimulatorVersionXcelium" Val="24.03.003"/>
+    <Option Name="SimulatorVersionVCS" Val="V-2023.12-SP1"/>
+    <Option Name="SimulatorVersionRiviera" Val="2024.04"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
     <Option Name="SimulatorVersionActiveHdl" Val="15.0"/>
     <Option Name="SimulatorGccVersionXsim" Val="9.3.0"/>
     <Option Name="SimulatorGccVersionModelSim" Val="7.4.0"/>
@@ -44,8 +62,12 @@
     <Option Name="SimulatorGccVersionRiviera" Val="9.3.0"/>
     <Option Name="SimulatorGccVersionActiveHdl" Val="9.3.0"/>
     <Option Name="BoardPart" Val=""/>
+<<<<<<< HEAD
     <Option Name="SourceMgmtMode" Val="DisplayOnly"/>
     <Option Name="ActiveSimSet" Val="sim_2"/>
+=======
+    <Option Name="ActiveSimSet" Val="sim_1"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="ProjectType" Val="Default"/>
     <Option Name="IPOutputRepo" Val="$PCACHEDIR/ip"/>
@@ -59,7 +81,11 @@
     <Option Name="IPUserFilesDir" Val="$PIPUSERFILESDIR"/>
     <Option Name="IPStaticSourceDir" Val="$PIPUSERFILESDIR/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
+<<<<<<< HEAD
     <Option Name="WTXSimLaunchSim" Val="22"/>
+=======
+    <Option Name="WTXSimLaunchSim" Val="4"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -97,6 +123,7 @@
           <Attr Name="IsVisible" Val="1"/>
         </FileInfo>
       </File>
+<<<<<<< HEAD
       <File Path="$PSRCDIR/sources_1/new/EX_ALU_Input_Sel.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -104,6 +131,8 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+=======
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <File Path="$PSRCDIR/sources_1/new/EX_ALUControl_Gen.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -118,6 +147,16 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+<<<<<<< HEAD
+=======
+      <File Path="$PSRCDIR/sources_1/new/EX_ALU_Input_Sel.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <File Path="$PSRCDIR/sources_1/new/EX_ALU_RV32I.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -272,6 +311,16 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+<<<<<<< HEAD
+=======
+      <File Path="$PSRCDIR/sources_1/new/CPU_RV32IM_Pipeline.v">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <File Path="$PSRCDIR/sources_1/new/Mem_Hex_Files/DMEM_Data_Block.mem">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -298,7 +347,11 @@
       </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
+<<<<<<< HEAD
         <Option Name="TopModule" Val="EX_ALU_Input_Sel"/>
+=======
+        <Option Name="TopModule" Val="CPU_RV32IM_Pipeline"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
         <Option Name="TopAutoSet" Val="TRUE"/>
       </Config>
     </FileSet>
@@ -317,6 +370,7 @@
     </FileSet>
     <FileSet Name="sim_1" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_1" RelGenDir="$PGENDIR/sim_1">
       <Filter Type="Srcs"/>
+<<<<<<< HEAD
       <File Path="$PSRCDIR/sim_1/new/tb_full_pipeline.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -324,6 +378,8 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+=======
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <File Path="$PSRCDIR/sim_1/new/CPU_RV32IM_Pipeline_TB.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -333,6 +389,10 @@
       </File>
       <File Path="$PSRCDIR/sim_1/new/CPU_Control_Codes_TB.vh">
         <FileInfo>
+<<<<<<< HEAD
+=======
+          <Attr Name="AutoDisabled" Val="1"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
           <Attr Name="IsVisible" Val="1"/>
@@ -342,7 +402,10 @@
         <Option Name="DesignMode" Val="RTL"/>
         <Option Name="TopModule" Val="CPU_RV32IM_Pipeline_TB"/>
         <Option Name="TopLib" Val="xil_defaultlib"/>
+<<<<<<< HEAD
         <Option Name="TopAutoSet" Val="TRUE"/>
+=======
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
         <Option Name="TransportPathDelay" Val="0"/>
         <Option Name="TransportIntDelay" Val="0"/>
         <Option Name="SelectedSimModel" Val="rtl"/>
@@ -354,7 +417,10 @@
         <Option Name="CosimPdi" Val=""/>
         <Option Name="CosimPlatform" Val=""/>
         <Option Name="CosimElf" Val=""/>
+<<<<<<< HEAD
         <Option Name="Dmv" Val=""/>
+=======
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       </Config>
     </FileSet>
     <FileSet Name="utils_1" Type="Utils" RelSrcDir="$PSRCDIR/utils_1" RelGenDir="$PGENDIR/utils_1">
@@ -371,6 +437,7 @@
         <Option Name="TopAutoSet" Val="TRUE"/>
       </Config>
     </FileSet>
+<<<<<<< HEAD
     <FileSet Name="sim_2" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_2" RelGenDir="$PGENDIR/sim_2">
       <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/sim_2/new/alu_i_test.v">
@@ -419,6 +486,8 @@
         <Option Name="Dmv" Val=""/>
       </Config>
     </FileSet>
+=======
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
   </FileSets>
   <Simulators>
     <Simulator Name="XSim">
@@ -442,21 +511,41 @@
     </Simulator>
   </Simulators>
   <Runs Version="1" Minor="22">
+<<<<<<< HEAD
     <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7a200tfbg676-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/synth_1/CPU_RV32IM_Pipeline.dcp" WriteIncrSynthDcp="false" State="current" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024"/>
+=======
+    <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7a200tfbg676-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/synth_1/CPU_RV32IM_Pipeline.dcp" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_1" ParallelReportGen="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
         <Step Id="synth_design">
           <Option Id="GlobalReTiming">1</Option>
           <Option Id="ReTiming">1</Option>
         </Step>
       </Strategy>
+<<<<<<< HEAD
+=======
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2024"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
+<<<<<<< HEAD
     <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg676-1" ConstrsSet="constrs_1" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" SynthRun="synth_1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_1" LaunchOptions="-jobs 8 " AutoRQSDir="$PSRCDIR/utils_1/imports/impl_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2024"/>
+=======
+    <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a200tfbg676-1" ConstrsSet="constrs_1" Description="Default settings for Implementation." AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/impl_1" SynthRun="synth_1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_1" LaunchOptions="-jobs 8 " AutoRQSDir="$PSRCDIR/utils_1/imports/impl_1" ParallelReportGen="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2024">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
         <Step Id="init_design"/>
         <Step Id="opt_design"/>
         <Step Id="power_opt_design"/>
@@ -469,6 +558,10 @@
         <Step Id="post_route_phys_opt_design"/>
         <Step Id="write_bitstream"/>
       </Strategy>
+<<<<<<< HEAD
+=======
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+>>>>>>> 8d42b9ceda11db5e8b8e62e4ef8b858bb42e94d9
       <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2024"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
