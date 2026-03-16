@@ -1,0 +1,21 @@
+# Vivado temporary files
+.Xil/
+*.jou
+*.log
+*.pb
+*.str
+*.dir/
+
+# Implementation and Synthesis results
+*.runs/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.sim/
+
+# Binary bitstreams
+*.bit
+*.bin
+
+# Local configuration
+.vscode/
